@@ -27,6 +27,7 @@
       --color-london-overground: #EE7C0E;
       --color-elizabeth: #6950A1;
       --color-tram: #84B817;
+      --color-national-rail: #333333;
       --color-default: #555555;
 
       /* Status Palette */
@@ -103,15 +104,15 @@
       position: absolute; top: 42px; left: 0; right: 0;
       background: white; border: 1px solid #ccc; border-radius: 10px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100;
-      max-height: 250px; overflow-y: auto; display: none;
+      max-height: 280px; overflow-y: auto; display: none;
     }
     .search-result-item {
-      padding: 10px 14px; cursor: pointer; font-size: 14px;
+      padding: 11px 14px; cursor: pointer; font-size: 14px;
       border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center;
     }
     .search-result-item:last-child { border-bottom: 0; }
     .search-result-item:hover { background: #f5f5f5; }
-    .station-modes { font-size: 11px; color: #666; font-weight: 600; text-transform: uppercase; }
+    .station-modes { font-size: 11px; color: #666; font-weight: 700; text-transform: uppercase; background: #eee; padding: 2px 6px; border-radius: 4px; }
 
     .controls { display: flex; align-items: center; gap: 10px; }
     .toggle-fav {
@@ -208,17 +209,17 @@
     .status-tag.minor { background: var(--status-minor); }
 
     /* Timetable Styles */
-    .timetable-group { margin-bottom: 16px; }
+    .timetable-group { margin-bottom: 16px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
     .timetable-group-title {
-      font-size: 14px; font-weight: 800; padding: 10px 14px; background: #e9e9e9;
-      border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center;
+      font-size: 14px; font-weight: 800; padding: 10px 14px; background: #e0e0e0; color: #111;
+      display: flex; justify-content: space-between; align-items: center;
     }
     .timetable-item {
       background: white; padding: 12px 14px; border-bottom: 1px solid #eee;
       display: flex; justify-content: space-between; align-items: center;
     }
-    .timetable-item:last-child { border-bottom: 0; border-radius: 0 0 8px 8px; }
-    .train-dest { font-weight: 700; font-size: 14px; }
+    .timetable-item:last-child { border-bottom: 0; }
+    .train-dest { font-weight: 700; font-size: 14px; color: #111; }
     .train-plat { font-size: 12px; color: #666; margin-top: 2px; }
     .train-time {
       font-weight: 800; font-size: 14px; color: #111;
@@ -325,7 +326,7 @@
       </ul>
 
       <h3>⏱️ Live Timetable Tab</h3>
-      <p>Type any London station name in the search bar to find live departures for all platforms and serving lines.</p>
+      <p>Type any London Tube, Overground, Elizabeth Line, or National Rail station name in the search bar to find live train departures.</p>
     </div>
   </div>
 </div>
@@ -333,9 +334,10 @@
 <script>
 const API_LIVE = "https://api.tfl.gov.uk/Line/Mode/tube,dlr,elizabeth-line,overground/Status?detail=true";
 
-let currentTab = "map"; // Set Network Map as default landing page
+let currentTab = "map";
 let selectedLineDetailId = null;
 let selectedStopPointId = null;
+let selectedStationName = "";
 let lastUpdatedTime = null;
 let cachedLiveMapData = [];
 let favoriteLines = new Set(JSON.parse(localStorage.getItem("tfl_fav_lines") || "[]"));
@@ -666,6 +668,7 @@ function cardLive(line, forceOpenMap = false) {
   </article>`;
 }
 
+// SEARCH ALL TFL STATIONS AND NATIONAL RAIL HUBS
 let searchTimeout = null;
 async function searchStations(query) {
   const dropdown = document.getElementById("station-dropdown");
@@ -675,7 +678,7 @@ async function searchStations(query) {
   }
 
   try {
-    const url = `https://api.tfl.gov.uk/StopPoint/Search/${encodeURIComponent(query)}?modes=tube,dlr,elizabeth-line,overground&maxResults=8`;
+    const url = `https://api.tfl.gov.uk/StopPoint/Search/${encodeURIComponent(query)}?modes=tube,dlr,elizabeth-line,overground,national-rail,tram&maxResults=10`;
     const res = await fetch(url);
     if (!res.ok) return;
     const data = await res.json();
@@ -699,15 +702,17 @@ async function searchStations(query) {
 
 function selectStationForTimetable(stopPointId, stationName) {
   selectedStopPointId = stopPointId;
+  selectedStationName = stationName;
   document.getElementById("search-bar").value = stationName;
   document.getElementById("station-dropdown").style.display = "none";
   loadLiveTimetable(stopPointId, stationName);
 }
 
+// UNIVERSAL ARRIVALS FETCH ENGINE
 async function loadLiveTimetable(stopPointId, stationName = "") {
   const results = document.getElementById("results");
   if (!stopPointId) {
-    results.innerHTML = `<div class="message">Type a station name above to search for live train departures.</div>`;
+    results.innerHTML = `<div class="message">Type any station name above to search for live departures.</div>`;
     return;
   }
 
@@ -717,7 +722,24 @@ async function loadLiveTimetable(stopPointId, stationName = "") {
     const url = `https://api.tfl.gov.uk/StopPoint/${stopPointId}/Arrivals`;
     const response = await fetch(url);
     if (!response.ok) throw new Error("HTTP " + response.status);
-    const arrivals = await response.json();
+    let arrivals = await response.json();
+
+    // If initial StopPoint returns 0 results, query child stops if it's a hub
+    if ((!arrivals || arrivals.length === 0) && stopPointId.startsWith("HUB")) {
+      const hubUrl = `https://api.tfl.gov.uk/StopPoint/${stopPointId}`;
+      const hubRes = await fetch(hubUrl);
+      if (hubRes.ok) {
+        const hubData = await hubRes.json();
+        const childIds = (hubData.children || []).map(c => c.id).filter(Boolean);
+        if (childIds.length > 0) {
+          const childArrivalsUrl = `https://api.tfl.gov.uk/StopPoint/${childIds.join(',')}/Arrivals`;
+          const childRes = await fetch(childArrivalsUrl);
+          if (childRes.ok) {
+            arrivals = await childRes.json();
+          }
+        }
+      }
+    }
 
     if (!arrivals || arrivals.length === 0) {
       results.innerHTML = `<div class="message">No upcoming train departures found for <strong>${escapeHtml(stationName)}</strong> right now.</div>`;
@@ -728,7 +750,7 @@ async function loadLiveTimetable(stopPointId, stationName = "") {
 
     const grouped = {};
     arrivals.forEach(train => {
-      const lineKey = train.lineName || "Service";
+      const lineKey = train.lineName || "National Rail / Service";
       const dirKey = train.platformName || train.destinationName || "Departures";
       const groupKey = `${lineKey} — ${dirKey}`;
 
@@ -743,7 +765,7 @@ async function loadLiveTimetable(stopPointId, stationName = "") {
           <span>🚇 ${escapeHtml(title)}</span>
         </div>`;
 
-      trains.slice(0, 3).forEach(t => {
+      trains.slice(0, 4).forEach(t => {
         const mins = Math.floor(t.timeToStation / 60);
         const timeStr = mins <= 0 ? "Due" : `${mins} mins`;
         html += `
@@ -765,7 +787,7 @@ async function loadLiveTimetable(stopPointId, stationName = "") {
     updateRelativeTime();
   } catch (err) {
     console.error(err);
-    results.innerHTML = `<div class="message"><strong>Could not load arrivals.</strong><p>Please try searching for the station again.</p></div>`;
+    results.innerHTML = `<div class="message"><strong>Could not load arrivals.</strong><p>Please try searching for another station.</p></div>`;
   }
 }
 
@@ -945,9 +967,9 @@ document.getElementById("tab-timetable").addEventListener("click", (e) => {
   selectedStopPointId = null;
   setActiveTab(e.target);
   document.getElementById("search-bar").value = "";
-  document.getElementById("search-bar").placeholder = "Type any station name (e.g. Oxford Circus, King's Cross)...";
+  document.getElementById("search-bar").placeholder = "Type any London station (e.g., Shepherd's Bush, Waterloo, King's Cross)...";
   document.getElementById("fav-label").style.display = "none";
-  document.getElementById("results").innerHTML = `<div class="message">Type a London station name in the search bar above to view live train departures.</div>`;
+  document.getElementById("results").innerHTML = `<div class="message">Type any London station name in the search bar above to view live train departures.</div>`;
 });
 
 function setActiveTab(target) {
@@ -968,7 +990,7 @@ document.getElementById("search-bar").addEventListener("input", (e) => {
 document.getElementById("btn-refresh").addEventListener("click", () => {
   if (currentTab === "timetable") {
     if (selectedStopPointId) {
-      loadLiveTimetable(selectedStopPointId, document.getElementById("search-bar").value);
+      loadLiveTimetable(selectedStopPointId, selectedStationName);
     }
   } else {
     loadStatus();
