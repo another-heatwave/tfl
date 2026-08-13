@@ -58,7 +58,7 @@
       color: #aaa;
       border: 0;
       padding: 10px;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
       cursor: pointer;
       border-radius: 8px;
@@ -85,7 +85,7 @@
       gap: 10px;
       flex-wrap: wrap;
     }
-    .search-input {
+    .search-input, select.select-input {
       width: 100%;
       padding: 10px 14px;
       border: 1px solid #ddd;
@@ -95,7 +95,7 @@
       background: #fff;
       box-shadow: inset 0 1px 3px rgba(0,0,0,0.04);
     }
-    .search-input:focus { border-color: #111; }
+    .search-input:focus, select.select-input:focus { border-color: #111; }
 
     .controls { display: flex; align-items: center; gap: 10px; }
     .toggle-fav {
@@ -191,6 +191,24 @@
     .status-tag.severe { background: var(--status-severe); }
     .status-tag.minor { background: var(--status-minor); }
 
+    /* Timetable Styles */
+    .timetable-group { margin-bottom: 16px; }
+    .timetable-group-title {
+      font-size: 15px; font-weight: 800; padding: 10px 14px; background: #e9e9e9;
+      border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center;
+    }
+    .timetable-item {
+      background: white; padding: 12px 14px; border-bottom: 1px solid #eee;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .timetable-item:last-child { border-bottom: 0; border-radius: 0 0 8px 8px; }
+    .train-dest { font-weight: 700; font-size: 14px; }
+    .train-plat { font-size: 12px; color: #666; margin-top: 2px; }
+    .train-time {
+      font-weight: 800; font-size: 14px; color: #111;
+      background: #f0f0f0; padding: 4px 8px; border-radius: 6px;
+    }
+
     .network-container { background: white; border-radius: 12px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
     .network-title { font-size: 16px; font-weight: 800; margin-bottom: 12px; }
     .network-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
@@ -215,16 +233,33 @@
   <div class="tab-bar">
     <button class="tab-btn active" id="tab-live">Live Status</button>
     <button class="tab-btn" id="tab-map">Network Map</button>
+    <button class="tab-btn" id="tab-timetable">Live Timetable</button>
   </div>
 </header>
 
 <main>
   <div class="toolbar" id="toolbar">
     <input type="text" id="search-bar" class="search-input" placeholder="Search line or station (e.g., Stratford, Canonbury, Victoria)...">
+    
+    <select id="station-select" class="select-input" style="display: none;">
+      <option value="">-- Select a Station --</option>
+      <option value="940GZZLUSPB">Shepherd's Bush (Central Line)</option>
+      <option value="910GSHPBSH">Shepherd's Bush (Overground / Mildmay)</option>
+      <option value="940GZZLUKSX">King's Cross St. Pancras</option>
+      <option value="940GZZLUOXC">Oxford Circus</option>
+      <option value="940GZZLUVCT">Victoria</option>
+      <option value="940GZZLUBNK">Bank / Monument</option>
+      <option value="940GZZLUSTD">Stratford</option>
+      <option value="940GZZLULBG">London Bridge</option>
+      <option value="940GZZLUEDB">Ealing Broadway</option>
+      <option value="910GCLPHMJ1">Clapham Junction</option>
+      <option value="910GHACKNYC">Hackney Central</option>
+    </select>
+
     <div class="toolbar-row">
       <div class="controls">
         <button class="btn-refresh" id="btn-refresh">🔄 Refresh Status</button>
-        <label class="toggle-fav">
+        <label class="toggle-fav" id="fav-label">
           <input type="checkbox" id="filter-favs"> ⭐ Favorites only
         </label>
       </div>
@@ -261,23 +296,8 @@ const LINE_COLORS = {
   "tram": { var: "var(--color-tram)", text: "#111" }
 };
 
-// FULL DIRECTORY FOR OVERGROUND & TUBE NETWORK STATIONS
+// MASTER NETWORK ROUTE DEFINITIONS FOR ALL LINES
 const LINE_ROUTES = {
-  "london-overground": [
-    "Richmond", "Kew Gardens", "Gunnersbury", "South Acton", "Acton Central", 
-    "Willesden Junction", "Kensal Rise", "Brondesbury Park", "Brondesbury", 
-    "West Hampstead", "Finchley Road & Frognal", "Hampstead Heath", "Gospel Oak", 
-    "Kentish Town West", "Camden Road", "Caledonian Road & Barnsbury", "Highbury & Islington", 
-    "Canonbury", "Dalston Kingsland", "Hackney Central", "Homerton", "Hackney Wick", "Stratford",
-    "Clapham Junction", "Upper Holloway", "Crouch Hill", "Harringay Green Lanes", "Blackhorse Road",
-    "Walthamstow Queen's Road", "Leyton Midland Road", "Leytonstone High Road", "Wanstead Park", "Woodgrange Park", "Barking", "Barking Riverside"
-  ],
-  "victoria": [
-    "Brixton", "Stockwell", "Vauxhall", "Pimlico", "Victoria", "Green Park", 
-    "Oxford Circus", "Warren Street", "Euston", "King's Cross St Pancras", 
-    "Highbury & Islington", "Finsbury Park", "Seven Sisters", "Tottenham Hale", 
-    "Blackhorse Road", "Walthamstow Central"
-  ],
   "bakerloo": [
     "Harrow & Wealdstone", "Kenton", "South Kenton", "North Wembley", "Wembley Central",
     "Stonebridge Park", "Harlesden", "Willesden Junction", "Kensal Green", "Queen's Park",
@@ -295,6 +315,34 @@ const LINE_ROUTES = {
     "Newbury Park", "Barkingside", "Fairlop", "Hainault", "Grange Hill", "Chigwell", 
     "Roding Valley", "Snaresbrook", "South Woodford", "Woodford", "Buckhurst Hill", "Loughton", "Debden", "Theydon Bois", "Epping"
   ],
+  "circle": [
+    "Hammersmith", "Goldhawk Road", "Shepherd's Bush Market", "Wood Lane", "Latimer Road", 
+    "Ladbroke Grove", "Westbourne Park", "Royal Oak", "Paddington", "Edgware Road", 
+    "Baker Street", "Great Portland Street", "Euston Square", "King's Cross St Pancras", 
+    "Farringdon", "Barbican", "Moorgate", "Liverpool Street", "Aldgate", "Tower Hill", 
+    "Monument", "Cannon Street", "Mansion House", "Blackfriars", "Temple", "Embankment", 
+    "Westminster", "St James's Park", "Victoria", "Sloane Square", "South Kensington", 
+    "Gloucester Road", "High Street Kensington", "Notting Hill Gate", "Bayswater"
+  ],
+  "district": [
+    "Upminster", "Upminster Bridge", "Hornchurch", "Elm Park", "Dagenham East", "Dagenham Heathway", 
+    "Becontree", "Upney", "Barking", "East Ham", "Upton Park", "Plaistow", "West Ham", 
+    "Bromley-by-Bow", "Bow Road", "Mile End", "Stepney Green", "Whitechapel", "Aldgate East", 
+    "Tower Hill", "Monument", "Cannon Street", "Mansion House", "Blackfriars", "Temple", 
+    "Embankment", "Westminster", "St James's Park", "Victoria", "Sloane Square", "South Kensington", 
+    "Gloucester Road", "Earl's Court", "West Kensington", "Barons Court", "Hammersmith", 
+    "Ravenscourt Park", "Stamford Brook", "Turnham Green", "Chiswick Park", "Acton Town", 
+    "Ealing Common", "Ealing Broadway", "Kew Gardens", "Richmond", "West Brompton", "Fulham Broadway", 
+    "Parsons Green", "Putney Bridge", "East Putney", "Southfields", "Wimbledon Park", "Wimbledon"
+  ],
+  "hammersmith-city": [
+    "Hammersmith", "Goldhawk Road", "Shepherd's Bush Market", "Wood Lane", "Latimer Road", 
+    "Ladbroke Grove", "Westbourne Park", "Royal Oak", "Paddington", "Edgware Road", 
+    "Baker Street", "Great Portland Street", "Euston Square", "King's Cross St Pancras", 
+    "Farringdon", "Barbican", "Moorgate", "Liverpool Street", "Aldgate East", "Whitechapel", 
+    "Stepney Green", "Mile End", "Bow Road", "Bromley-by-Bow", "West Ham", "Plaistow", 
+    "Upton Park", "East Ham", "Barking"
+  ],
   "jubilee": [
     "Stanmore", "Canons Park", "Queensbury", "Kingsbury", "Wembley Park", "Neasden", 
     "Dollis Hill", "Willesden Green", "Kilburn", "West Hampstead", "Finchley Road", 
@@ -302,21 +350,62 @@ const LINE_ROUTES = {
     "Westminster", "Waterloo", "Southwark", "London Bridge", "Bermondsey", 
     "Canada Water", "Canary Wharf", "North Greenwich", "Canning Town", "Stratford"
   ],
+  "metropolitan": [
+    "Aldgate", "Liverpool Street", "Moorgate", "Barbican", "Farringdon", "King's Cross St Pancras", 
+    "Euston Square", "Great Portland Street", "Baker Street", "Finchley Road", "Wembley Park", 
+    "Preston Road", "Harrow-on-the-Hill", "North Harrow", "Pinner", "Northwood Hills", "Northwood", 
+    "Moor Park", "Rickmansworth", "Chorleywood", "Chalfont & Latimer", "Amersham", "Chesham", 
+    "Watford", "West Harrow", "Rayners Lane", "Eastcote", "Ruislip Manor", "Ruislip", "Ickenham", "Hillingdon", "Uxbridge"
+  ],
   "northern": [
-    "Edgware", "Burnt Oak", "Colindale", "Hendon Central", "Brent Cross", "Golders Green",
-    "Hampstead", "Belsize Park", "Chalk Farm", "Camden Town", "Euston", "King's Cross St Pancras",
-    "Angel", "Old Street", "Moorgate", "Bank", "London Bridge", "Borough", "Elephant & Castle",
-    "Kennington", "Oval", "Stockwell", "Clapham North", "Clapham Common", "Clapham South",
+    "High Barnet", "Totteridge & Whetstone", "Woodside Park", "West Finchley", "Finchley Central", 
+    "East Finchley", "Highgate", "Archway", "Tufnell Park", "Kentish Town", "Edgware", "Burnt Oak", 
+    "Colindale", "Hendon Central", "Brent Cross", "Golders Green", "Hampstead", "Belsize Park", 
+    "Chalk Farm", "Camden Town", "Euston", "King's Cross St Pancras", "Angel", "Old Street", 
+    "Moorgate", "Bank", "London Bridge", "Borough", "Elephant & Castle", "Kennington", "Nine Elms", 
+    "Battersea Power Station", "Oval", "Stockwell", "Clapham North", "Clapham Common", "Clapham South", 
     "Balham", "Tooting Bec", "Tooting Broadway", "Colliers Wood", "South Wimbledon", "Morden"
   ],
   "piccadilly": [
-    "Uxbridge", "Hillingdon", "Ickenham", "Ruislip", "Ruislip Manor", "Eastcote", "Rayners Lane",
-    "South Harrow", "Sudbury Hill", "Sudbury Town", "Alperton", "Park Royal", "North Ealing",
-    "Ealing Common", "Acton Town", "Turnham Green", "Hammersmith", "Barons Court", "Earl's Court",
-    "South Kensington", "Knightsbridge", "Hyde Park Corner", "Green Park", "Piccadilly Circus",
-    "Leicester Square", "Covent Garden", "Holborn", "Russell Square", "King's Cross St Pancras",
-    "Caledonian Road", "Holloway Road", "Arsenal", "Finsbury Park", "Manor House", "Turnpike Lane",
+    "Uxbridge", "Hillingdon", "Ickenham", "Ruislip", "Ruislip Manor", "Eastcote", "Rayners Lane", 
+    "South Harrow", "Sudbury Hill", "Sudbury Town", "Alperton", "Park Royal", "North Ealing", 
+    "Ealing Common", "Acton Town", "Turnham Green", "Hammersmith", "Barons Court", "Earl's Court", 
+    "South Kensington", "Knightsbridge", "Hyde Park Corner", "Green Park", "Piccadilly Circus", 
+    "Leicester Square", "Covent Garden", "Holborn", "Russell Square", "King's Cross St Pancras", 
+    "Caledonian Road", "Holloway Road", "Arsenal", "Finsbury Park", "Manor House", "Turnpike Lane", 
     "Wood Green", "Bounds Green", "Arnos Grove", "Southgate", "Oakwood", "Cockfosters"
+  ],
+  "victoria": [
+    "Brixton", "Stockwell", "Vauxhall", "Pimlico", "Victoria", "Green Park", 
+    "Oxford Circus", "Warren Street", "Euston", "King's Cross St Pancras", 
+    "Highbury & Islington", "Finsbury Park", "Seven Sisters", "Tottenham Hale", 
+    "Blackhorse Road", "Walthamstow Central"
+  ],
+  "waterloo-city": ["Waterloo", "Bank"],
+  "dlr": [
+    "Bank", "Tower Gateway", "Shadwell", "Limehouse", "Westferry", "Poplar", "Blackwall", 
+    "East India", "Canning Town", "West Silvertown", "Pontoon Dock", "London City Airport", 
+    "King George V", "Woolwich Arsenal", "Canary Wharf", "Heron Quays", "South Quay", 
+    "Crossharbour", "Mudchute", "Island Gardens", "Cutty Sark", "Greenwich", "Deptford Bridge", 
+    "Elverson Road", "Lewisham", "Stratford", "Stratford High Street", "Stratford International"
+  ],
+  "london-overground": [
+    "Richmond", "Kew Gardens", "Gunnersbury", "South Acton", "Acton Central", 
+    "Willesden Junction", "Kensal Rise", "Brondesbury Park", "Brondesbury", 
+    "West Hampstead", "Finchley Road & Frognal", "Hampstead Heath", "Gospel Oak", 
+    "Kentish Town West", "Camden Road", "Caledonian Road & Barnsbury", "Highbury & Islington", 
+    "Canonbury", "Dalston Kingsland", "Hackney Central", "Homerton", "Hackney Wick", "Stratford", 
+    "Clapham Junction", "Upper Holloway", "Crouch Hill", "Harringay Green Lanes", "Blackhorse Road", 
+    "Walthamstow Queen's Road", "Leyton Midland Road", "Leytonstone High Road", "Wanstead Park", "Woodgrange Park", "Barking", "Barking Riverside"
+  ],
+  "elizabeth": [
+    "Reading", "Twyford", "Maidenhead", "Taplow", "Burnham", "Slough", "Langley", "Iver", 
+    "West Drayton", "Heathrow Terminal 5", "Heathrow Terminals 2 & 3", "Heathrow Terminal 4", 
+    "Hayes & Harlington", "Southall", "Hanwell", "West Ealing", "Ealing Broadway", "Acton Main Line", 
+    "Paddington", "Bond Street", "Tottenham Court Road", "Farringdon", "Liverpool Street", 
+    "Whitechapel", "Stratford", "Maryland", "Forest Gate", "Manor Park", "Ilford", "Seven Kings", 
+    "Goodmayes", "Chadwell Heath", "Romford", "Gidea Park", "Harold Wood", "Brentwood", "Shenfield", 
+    "Canary Wharf", "Custom House", "Woolwich", "Abbey Wood"
   ]
 };
 
@@ -349,7 +438,7 @@ function classify(statusText) {
   return { type: "minor", label: statusText || "Unknown" };
 }
 
-// ROBUST PARSER WITH OVERGROUND BRANCH MAP MATCHING
+// INTELLIGENT DISruption EVALUATOR
 function analyzeRouteStatus(lineId, statusObj) {
   const route = LINE_ROUTES[lineId] || [];
   const stationStatuses = new Map();
@@ -368,16 +457,10 @@ function analyzeRouteStatus(lineId, statusObj) {
     const reason = status.reason || status.disruption?.description || "";
     const lowerReason = reason.toLowerCase();
 
-    // 1. Whole line closures
-    if (mainSeverity.type === "closed" && !lowerReason.includes("between") && !lowerReason.includes("from")) {
-      route.forEach((_, idx) => stationStatuses.set(idx, "closed"));
-      addBanner("closed", "No service on entire line");
-      return;
-    }
-
-    // 2. Multi-phrase parser capturing "no service between A and B"
+    // 1. Check for specific closed boundaries ("between A and B")
     const closedRegex = /(?:no service|suspended|part closure|closed|part suspended)\s+(?:between|from)\s+([a-z0-9\s&'-]+?)\s+(?:and|to)\s+([a-z0-9\s&'-]+?)(?=\s+due|\s+while|\s+and|\.|$)/gi;
     let match;
+    let foundRange = false;
 
     while ((match = closedRegex.exec(lowerReason)) !== null) {
       const startStr = cleanStationName(match[1]);
@@ -393,6 +476,7 @@ function analyzeRouteStatus(lineId, statusObj) {
       });
 
       if (idxA !== -1 && idxB !== -1) {
+        foundRange = true;
         const start = Math.min(idxA, idxB);
         const end = Math.max(idxA, idxB);
         for (let i = start; i <= end; i++) {
@@ -402,30 +486,27 @@ function analyzeRouteStatus(lineId, statusObj) {
       }
     }
 
-    // 3. Fallback: If no ranges match, check named stations directly in reason
-    if (stationStatuses.size === 0 && mainSeverity.type === "closed") {
-      route.forEach((st, idx) => {
-        if (lowerReason.includes(cleanStationName(st))) {
-          stationStatuses.set(idx, "closed");
-        }
-      });
+    // 2. Entire line closure / suspension fallback
+    if (mainSeverity.type === "closed" && !foundRange) {
+      route.forEach((_, idx) => stationStatuses.set(idx, "closed"));
+      addBanner("closed", "No service on line");
     }
 
-    // 4. Delays on remainder of line
-    if (lowerReason.includes("severe delays") || mainSeverity.type === "severe") {
+    // 3. Severe / Minor Delays across rest of line
+    if (lowerReason.includes("severe delays") || (mainSeverity.type === "severe" && stationStatuses.size === 0)) {
       route.forEach((_, idx) => {
         if (!stationStatuses.has(idx)) {
           stationStatuses.set(idx, "severe");
         }
       });
-      addBanner("severe", "Severe delays on rest of the line");
-    } else if (lowerReason.includes("minor delays") || mainSeverity.type === "minor") {
+      addBanner("severe", stationStatuses.size === route.length ? "Severe delays across entire line" : "Severe delays on rest of the line");
+    } else if (lowerReason.includes("minor delays") || (mainSeverity.type === "minor" && stationStatuses.size === 0)) {
       route.forEach((_, idx) => {
         if (!stationStatuses.has(idx)) {
           stationStatuses.set(idx, "minor");
         }
       });
-      addBanner("minor", "Minor delays on rest of the line");
+      addBanner("minor", stationStatuses.size === route.length ? "Minor delays across entire line" : "Minor delays on rest of the line");
     }
   });
 
@@ -528,6 +609,71 @@ function cardLive(line, forceOpenMap = false) {
   </article>`;
 }
 
+async function loadLiveTimetable(stopPointId) {
+  const results = document.getElementById("results");
+  if (!stopPointId) {
+    results.innerHTML = `<div class="message">Please select a station from the dropdown above.</div>`;
+    return;
+  }
+
+  results.innerHTML = `<div class="message">Fetching live train arrivals…</div>`;
+
+  try {
+    const url = `https://api.tfl.gov.uk/StopPoint/${stopPointId}/Arrivals`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("HTTP " + response.status);
+    const arrivals = await response.json();
+
+    if (!arrivals || arrivals.length === 0) {
+      results.innerHTML = `<div class="message">No live departures found for this station right now.</div>`;
+      return;
+    }
+
+    arrivals.sort((a, b) => a.timeToStation - b.timeToStation);
+
+    const grouped = {};
+    arrivals.forEach(train => {
+      const lineKey = train.lineName || "Service";
+      const dirKey = train.platformName || train.destinationName || "Departures";
+      const groupKey = `${lineKey} — ${dirKey}`;
+
+      if (!grouped[groupKey]) grouped[groupKey] = [];
+      grouped[groupKey].push(train);
+    });
+
+    let html = "";
+    for (const [title, trains] of Object.entries(grouped)) {
+      html += `<div class="timetable-group">
+        <div class="timetable-group-title">
+          <span>🚇 ${escapeHtml(title)}</span>
+        </div>`;
+
+      trains.slice(0, 3).forEach(t => {
+        const mins = Math.floor(t.timeToStation / 60);
+        const timeStr = mins <= 0 ? "Due" : `${mins} mins`;
+        html += `
+          <div class="timetable-item">
+            <div>
+              <div class="train-dest">To ${escapeHtml(t.destinationName || "Destination")}</div>
+              <div class="train-plat">${escapeHtml(t.currentLocation || "In transit")}</div>
+            </div>
+            <div class="train-time">${escapeHtml(timeStr)}</div>
+          </div>
+        `;
+      });
+
+      html += `</div>`;
+    }
+
+    results.innerHTML = html;
+    lastUpdatedTime = new Date();
+    updateRelativeTime();
+  } catch (err) {
+    console.error(err);
+    results.innerHTML = `<div class="message"><strong>Could not load arrivals.</strong><p>Please try another station.</p></div>`;
+  }
+}
+
 function openLineDetailView(lineId) {
   selectedLineDetailId = lineId;
   const lineData = cachedLiveMapData.find(l => l.id === lineId);
@@ -557,9 +703,18 @@ function renderNetworkMap(data) {
   const cardsHtml = data.map(line => {
     const statusObj = line.lineStatuses?.[0];
     const mainClassify = classify(statusObj?.statusSeverityDescription);
-    const { stationStatuses } = analyzeRouteStatus(line.id, line);
+    const { route, stationStatuses } = analyzeRouteStatus(line.id, line);
     const styleConf = LINE_COLORS[line.id] || { var: "var(--color-default)", text: "#fff" };
     const hasDisruption = mainClassify.type !== "good";
+
+    let summaryLabel = "✓ Normal service →";
+    if (hasDisruption) {
+      if (stationStatuses.size >= route.length && route.length > 0) {
+        summaryLabel = "⚠️ Entire line affected →";
+      } else {
+        summaryLabel = `⚠️ Part of line affected (${stationStatuses.size} stations) →`;
+      }
+    }
 
     return `
       <div class="network-card ${hasDisruption ? 'has-disruption' : ''}" style="--line-color: ${styleConf.var}" onclick="openLineDetailView('${line.id}')">
@@ -567,7 +722,9 @@ function renderNetworkMap(data) {
           <span class="line-badge">${escapeHtml(line.name)}</span>
           <span class="status ${mainClassify.type}" style="font-size: 13px;">${escapeHtml(mainClassify.label)}</span>
         </div>
-        ${hasDisruption ? `<div style="font-size: 12px; color: var(--status-closed); font-weight: 700;">⚠️ ${stationStatuses.size} station(s) affected →</div>` : `<div style="font-size: 12px; color: var(--status-good);">✓ All stations open →</div>`}
+        <div style="font-size: 12px; color: ${hasDisruption ? 'var(--status-closed)' : 'var(--status-good)'}; font-weight: 700;">
+          ${escapeHtml(summaryLabel)}
+        </div>
       </div>
     `;
   }).join('');
@@ -661,7 +818,9 @@ document.getElementById("tab-live").addEventListener("click", (e) => {
   currentTab = "live";
   selectedLineDetailId = null;
   setActiveTab(e.target);
-  document.getElementById("toolbar").style.display = "flex";
+  document.getElementById("search-bar").style.display = "block";
+  document.getElementById("station-select").style.display = "none";
+  document.getElementById("fav-label").style.display = "flex";
   loadStatus();
 });
 
@@ -669,8 +828,26 @@ document.getElementById("tab-map").addEventListener("click", (e) => {
   currentTab = "map";
   selectedLineDetailId = null;
   setActiveTab(e.target);
-  document.getElementById("toolbar").style.display = "flex";
+  document.getElementById("search-bar").style.display = "block";
+  document.getElementById("station-select").style.display = "none";
+  document.getElementById("fav-label").style.display = "none";
   loadStatus();
+});
+
+document.getElementById("tab-timetable").addEventListener("click", (e) => {
+  currentTab = "timetable";
+  selectedLineDetailId = null;
+  setActiveTab(e.target);
+  document.getElementById("search-bar").style.display = "none";
+  document.getElementById("station-select").style.display = "block";
+  document.getElementById("fav-label").style.display = "none";
+  
+  const selectedStation = document.getElementById("station-select").value;
+  if (selectedStation) {
+    loadLiveTimetable(selectedStation);
+  } else {
+    document.getElementById("results").innerHTML = `<div class="message">Please select a station above to view live train departures.</div>`;
+  }
 });
 
 function setActiveTab(target) {
@@ -678,9 +855,16 @@ function setActiveTab(target) {
   target.classList.add('active');
 }
 
+document.getElementById("station-select").addEventListener("change", (e) => {
+  if (currentTab === "timetable") {
+    loadLiveTimetable(e.target.value);
+  }
+});
+
 document.getElementById("btn-refresh").addEventListener("click", () => {
-  if (selectedLineDetailId) {
-    closeLineDetailView();
+  if (currentTab === "timetable") {
+    const selectedStation = document.getElementById("station-select").value;
+    loadLiveTimetable(selectedStation);
   } else {
     loadStatus();
   }
