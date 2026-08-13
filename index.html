@@ -58,6 +58,7 @@
       cursor: pointer;
       border-radius: 8px;
       transition: all 0.2s ease;
+      text-align: center;
     }
     .tab-btn.active {
       background: #fff;
@@ -170,20 +171,33 @@
 
     /* Visual Line Route Diagram */
     .line-diagram { display: flex; flex-direction: column; margin: 14px 0 10px 8px; }
-    .diagram-node { display: flex; align-items: center; gap: 12px; position: relative; padding: 5px 0; }
+    .diagram-node { display: flex; align-items: center; gap: 12px; position: relative; padding: 6px 0; }
+    
+    /* Line track connecting stations */
     .diagram-node::before {
       content: ''; position: absolute; left: 7px; top: 0; bottom: 0;
       width: 4px; background: var(--line-color, var(--color-default)); opacity: 0.3; z-index: 1;
     }
     .diagram-node:first-child::before { top: 50%; }
     .diagram-node:last-child::before { bottom: 50%; }
-    .diagram-node.segment-affected::before { background: #c62828; opacity: 1; width: 6px; left: 6px; }
     
+    /* Affected segment track */
+    .diagram-node.segment-affected::before {
+      background: #c62828; opacity: 1; width: 6px; left: 6px;
+    }
+    
+    /* Station node dot styling */
     .dot {
       width: 18px; height: 18px; border-radius: 50%; background: white;
       border: 4px solid var(--line-color, var(--color-default)); z-index: 2; flex-shrink: 0;
+      transition: all 0.2s ease;
     }
-    .diagram-node.node-affected .dot { background: #c62828; border-color: #c62828; }
+    
+    /* Station node dot - Affected styling */
+    .diagram-node.node-affected .dot {
+      background: #c62828; border-color: #c62828; transform: scale(1.1);
+    }
+    
     .node-name { font-size: 13px; color: #666; }
     .diagram-node.node-affected .node-name { color: #c62828; font-weight: 800; }
 
@@ -191,6 +205,24 @@
     .stations { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
     .station { background: #eee; border-radius: 999px; padding: 6px 9px; font-size: 13px; }
     .station.affected-pill { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; font-weight: 700; }
+
+    /* Network Map View Styling */
+    .network-container {
+      background: white; border-radius: 12px; padding: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    }
+    .network-title { font-size: 16px; font-weight: 800; margin-bottom: 12px; }
+    .network-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;
+    }
+    .network-card {
+      border: 2px solid #eee; border-radius: 10px; padding: 12px;
+      cursor: pointer; transition: all 0.2s ease;
+      border-left: 6px solid var(--line-color, var(--color-default));
+    }
+    .network-card:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.06); }
+    .network-card.has-disruption { border-color: #ffcdd2; background: #fffcfc; }
+    .network-card .line-header { justify-content: space-between; width: 100%; }
 
     details.raw-details { margin-top: 10px; }
     details.raw-details summary { color: #555; font-size: 13px; font-weight: 600; }
@@ -205,17 +237,18 @@
   
   <div class="tab-bar">
     <button class="tab-btn active" id="tab-live">Live Status</button>
+    <button class="tab-btn" id="tab-map">Network Map</button>
     <button class="tab-btn" id="tab-planned">Planned Works</button>
   </div>
 </header>
 
 <main>
-  <div class="toolbar">
+  <div class="toolbar" id="toolbar">
     <input type="text" id="search-bar" class="search-input" placeholder="Search line or station (e.g., Victoria, Oxford Circus)...">
     <div class="toolbar-row">
       <div class="controls">
         <button class="refresh" id="refresh">Refresh</button>
-        <label class="toggle-fav">
+        <label class="toggle-fav" id="fav-toggle-label">
           <input type="checkbox" id="filter-favs"> ⭐ Favorites only
         </label>
       </div>
@@ -252,7 +285,7 @@ const LINE_COLORS = {
   "tram": { var: "var(--color-tram)", text: "#111" }
 };
 
-// Line route station maps
+// Complete ordered station lists for exact station-between-station range inference
 const LINE_ROUTES = {
   "london-overground": [
     "Richmond", "Kew Gardens", "Gunnersbury", "South Acton", "Acton Central", 
@@ -343,6 +376,7 @@ function classify(status) {
   return { cls: "bad", text };
 }
 
+// INFER ALL INTERMEDIATE STATIONS BETWEEN TWO POINTS NAMED IN DISRUPTION
 function getAffectedIndices(lineId, description) {
   const route = LINE_ROUTES[lineId] || [];
   const affectedIndices = new Set();
@@ -350,6 +384,8 @@ function getAffectedIndices(lineId, description) {
   if (!description) return { route, affectedIndices, segmentSummary };
 
   const lowerDesc = description.toLowerCase();
+  
+  // Regex parsing phrases like "between [Station A] and [Station B]"
   const betweenRegex = /between\s+([a-z0-9\s&'-]+?)\s+and\s+([a-z0-9\s&'-]+?)(?=\s+due|\s+while|\s+and|\.|$)/gi;
   let match;
 
@@ -363,25 +399,34 @@ function getAffectedIndices(lineId, description) {
     if (idxA !== -1 && idxB !== -1) {
       const start = Math.min(idxA, idxB);
       const end = Math.max(idxA, idxB);
-      for (let i = start; i <= end; i++) affectedIndices.add(i);
+      
+      // INFER ALL STATIONS BETWEEN START AND END
+      for (let i = start; i <= end; i++) {
+        affectedIndices.add(i);
+      }
       segmentSummary = `Closed between ${route[start]} and ${route[end]}`;
     }
   }
 
+  // Fallback: If regex didn't catch range boundaries, match individually named stations
   if (affectedIndices.size === 0) {
     route.forEach((station, idx) => {
-      if (lowerDesc.includes(station.toLowerCase())) affectedIndices.add(idx);
+      if (lowerDesc.includes(station.toLowerCase())) {
+        affectedIndices.add(idx);
+      }
     });
   }
 
   return { route, affectedIndices, segmentSummary };
 }
 
+// BUILD VISUAL ROUTE MAP WITH FULL INTERMEDIATE HIGHLIGHTING
 function buildDiagramHtml(route, affectedIndices) {
   return `<div class="line-diagram">` + 
     route.map((station, i) => {
       const isAffected = affectedIndices.has(i);
       const isNextAffected = affectedIndices.has(i + 1);
+      // Highlight connecting segment track if both current and next station are in affected set
       const segmentClass = (isAffected && isNextAffected) ? 'segment-affected' : '';
       return `
         <div class="diagram-node ${isAffected ? 'node-affected' : ''} ${segmentClass}">
@@ -393,7 +438,7 @@ function buildDiagramHtml(route, affectedIndices) {
   `</div>`;
 }
 
-function cardLive(line) {
+function cardLive(line, defaultOpenMap = false) {
   const status = line.lineStatuses?.[0];
   if (!status) return "";
 
@@ -422,8 +467,8 @@ function cardLive(line) {
   let routeVisualization = "";
   if (route.length > 0) {
     routeVisualization = `
-      <details class="map-details">
-        <summary>🗺️ Show visual route map</summary>
+      <details class="map-details" ${defaultOpenMap ? 'open' : ''}>
+        <summary>🗺️ Show visual route map (${affectedIndices.size} stations affected)</summary>
         ${buildDiagramHtml(route, affectedIndices)}
       </details>
     `;
@@ -476,6 +521,36 @@ function cardPlanned(item) {
   </article>`;
 }
 
+function renderNetworkMap(data) {
+  const results = document.getElementById("results");
+  
+  const cardsHtml = data.map(line => {
+    const status = line.lineStatuses?.[0];
+    const info = classify(status);
+    const description = status?.reason || status?.disruption?.description || "";
+    const { affectedIndices } = getAffectedIndices(line.id, description);
+    const styleConf = LINE_COLORS[line.id] || { var: "var(--color-default)", text: "#fff" };
+    const hasDisruption = info.cls !== "good";
+
+    return `
+      <div class="network-card ${hasDisruption ? 'has-disruption' : ''}" style="--line-color: ${styleConf.var}">
+        <div class="line-header" style="margin-bottom: 8px;">
+          <span class="line-badge">${escapeHtml(line.name)}</span>
+          <span class="status ${info.cls}" style="font-size: 13px;">${escapeHtml(info.text)}</span>
+        </div>
+        ${hasDisruption ? `<div style="font-size: 12px; color: #c62828; font-weight: 700;">⚠️ ${affectedIndices.size} stations affected</div>` : `<div style="font-size: 12px; color: #148a36;">✓ All stations open</div>`}
+      </div>
+    `;
+  }).join('');
+
+  results.innerHTML = `
+    <div class="network-container">
+      <div class="network-title">Interactive TfL Network Overview</div>
+      <div class="network-grid">${cardsHtml}</div>
+    </div>
+  `;
+}
+
 function updateRelativeTime() {
   if (!lastUpdatedTime) return;
   const elapsedSecs = Math.floor((new Date() - lastUpdatedTime) / 1000);
@@ -496,44 +571,45 @@ async function loadStatus() {
   const searchQuery = document.getElementById("search-bar").value.toLowerCase().trim();
   const filterFavs = document.getElementById("filter-favs").checked;
 
-  results.innerHTML = `<div class="message">Loading ${currentTab === "live" ? "live status" : "planned works"}…</div>`;
+  results.innerHTML = `<div class="message">Loading network information…</div>`;
 
   try {
-    if (currentTab === "live") {
+    if (currentTab === "live" || currentTab === "map") {
       const response = await fetch(API_LIVE);
       if (!response.ok) throw new Error("HTTP " + response.status);
       let data = await response.json();
 
-      // Filter by favorites
-      if (filterFavs) {
-        data = data.filter(line => favoriteLines.has(line.id));
-      }
-
-      // Filter by search query (line name, station name, or description text)
-      if (searchQuery) {
-        data = data.filter(line => {
-          const nameMatch = line.name.toLowerCase().includes(searchQuery);
-          const descMatch = (line.lineStatuses?.[0]?.reason || "").toLowerCase().includes(searchQuery);
-          const routeMatch = (LINE_ROUTES[line.id] || []).some(s => s.toLowerCase().includes(searchQuery));
-          return nameMatch || descMatch || routeMatch;
-        });
-      }
-
-      // Sort favorites first, then disruptions, then good service
-      data.sort((a, b) => {
-        const aFav = favoriteLines.has(a.id) ? 1 : 0;
-        const bFav = favoriteLines.has(b.id) ? 1 : 0;
-        if (aFav !== bFav) return bFav - aFav;
-
-        const ag = (a.lineStatuses?.[0]?.statusSeverityDescription || "").toLowerCase().includes("good");
-        const bg = (b.lineStatuses?.[0]?.statusSeverityDescription || "").toLowerCase().includes("good");
-        return Number(ag) - Number(bg);
-      });
-
-      if (data.length === 0) {
-        results.innerHTML = `<div class="message">No matching lines or stations found.</div>`;
+      if (currentTab === "map") {
+        renderNetworkMap(data);
       } else {
-        results.innerHTML = data.map(cardLive).join("");
+        if (filterFavs) {
+          data = data.filter(line => favoriteLines.has(line.id));
+        }
+
+        if (searchQuery) {
+          data = data.filter(line => {
+            const nameMatch = line.name.toLowerCase().includes(searchQuery);
+            const descMatch = (line.lineStatuses?.[0]?.reason || "").toLowerCase().includes(searchQuery);
+            const routeMatch = (LINE_ROUTES[line.id] || []).some(s => s.toLowerCase().includes(searchQuery));
+            return nameMatch || descMatch || routeMatch;
+          });
+        }
+
+        data.sort((a, b) => {
+          const aFav = favoriteLines.has(a.id) ? 1 : 0;
+          const bFav = favoriteLines.has(b.id) ? 1 : 0;
+          if (aFav !== bFav) return bFav - aFav;
+
+          const ag = (a.lineStatuses?.[0]?.statusSeverityDescription || "").toLowerCase().includes("good");
+          const bg = (b.lineStatuses?.[0]?.statusSeverityDescription || "").toLowerCase().includes("good");
+          return Number(ag) - Number(bg);
+        });
+
+        if (data.length === 0) {
+          results.innerHTML = `<div class="message">No matching lines or stations found.</div>`;
+        } else {
+          results.innerHTML = data.map(line => cardLive(line)).join("");
+        }
       }
     } else {
       const response = await fetch(API_PLANNED);
@@ -567,20 +643,32 @@ async function loadStatus() {
   }
 }
 
-// Event Listeners
+// Tab Switching Mechanics
 document.getElementById("tab-live").addEventListener("click", (e) => {
   currentTab = "live";
-  e.target.classList.add("active");
-  document.getElementById("tab-planned").classList.remove("active");
+  setActiveTab(e.target);
+  document.getElementById("toolbar").style.display = "flex";
+  loadStatus();
+});
+
+document.getElementById("tab-map").addEventListener("click", (e) => {
+  currentTab = "map";
+  setActiveTab(e.target);
+  document.getElementById("toolbar").style.display = "flex";
   loadStatus();
 });
 
 document.getElementById("tab-planned").addEventListener("click", (e) => {
   currentTab = "planned";
-  e.target.classList.add("active");
-  document.getElementById("tab-live").classList.remove("active");
+  setActiveTab(e.target);
+  document.getElementById("toolbar").style.display = "flex";
   loadStatus();
 });
+
+function setActiveTab(target) {
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  target.classList.add('active');
+}
 
 document.getElementById("refresh").addEventListener("click", loadStatus);
 document.getElementById("search-bar").addEventListener("input", loadStatus);
