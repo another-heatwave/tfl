@@ -36,7 +36,7 @@
       --status-good: #148a36;
     }
     * { box-sizing: border-box; }
-    body { margin: 0; background: #f2f2f2; }
+    body { margin: 0; background: #f2f2f2; min-height: 100vh; display: flex; flex-direction: column; }
     header {
       background: #111;
       color: white;
@@ -70,13 +70,14 @@
       color: #111;
     }
 
-    main { max-width: 760px; margin: auto; padding: 16px; }
+    main { max-width: 760px; width: 100%; margin: auto; padding: 16px; flex: 1; }
     
     .toolbar {
       display: flex;
       flex-direction: column;
       gap: 10px;
       margin-bottom: 14px;
+      position: relative;
     }
     .toolbar-row {
       display: flex;
@@ -85,7 +86,7 @@
       gap: 10px;
       flex-wrap: wrap;
     }
-    .search-input, select.select-input {
+    .search-input {
       width: 100%;
       padding: 10px 14px;
       border: 1px solid #ddd;
@@ -95,7 +96,22 @@
       background: #fff;
       box-shadow: inset 0 1px 3px rgba(0,0,0,0.04);
     }
-    .search-input:focus, select.select-input:focus { border-color: #111; }
+    .search-input:focus { border-color: #111; }
+
+    /* Station Search Results Autocomplete Dropdown */
+    .search-results-dropdown {
+      position: absolute; top: 42px; left: 0; right: 0;
+      background: white; border: 1px solid #ccc; border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100;
+      max-height: 250px; overflow-y: auto; display: none;
+    }
+    .search-result-item {
+      padding: 10px 14px; cursor: pointer; font-size: 14px;
+      border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center;
+    }
+    .search-result-item:last-child { border-bottom: 0; }
+    .search-result-item:hover { background: #f5f5f5; }
+    .station-modes { font-size: 11px; color: #666; font-weight: 600; text-transform: uppercase; }
 
     .controls { display: flex; align-items: center; gap: 10px; }
     .toggle-fav {
@@ -194,7 +210,7 @@
     /* Timetable Styles */
     .timetable-group { margin-bottom: 16px; }
     .timetable-group-title {
-      font-size: 15px; font-weight: 800; padding: 10px 14px; background: #e9e9e9;
+      font-size: 14px; font-weight: 800; padding: 10px 14px; background: #e9e9e9;
       border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center;
     }
     .timetable-item {
@@ -223,6 +239,30 @@
     details.raw-details summary { color: #555; font-size: 13px; font-weight: 600; cursor: pointer; }
     .raw { background: #f5f5f5; padding: 10px; margin-top: 8px; font-size: 13px; line-height: 1.4; border-radius: 6px; }
     .message { background: white; padding: 18px; border-radius: 12px; text-align: center; color: #555; }
+
+    /* Footer & How to Use Modal */
+    footer {
+      text-align: center; padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+      font-size: 13px; color: #666; border-top: 1px solid #e0e0e0; background: #eaeaea;
+    }
+    footer a { color: #111; font-weight: 700; text-decoration: underline; cursor: pointer; }
+
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6);
+      display: flex; align-items: center; justify-content: center; padding: 16px;
+      z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: auto; }
+    .modal-content {
+      background: white; max-width: 600px; width: 100%; max-height: 85vh;
+      border-radius: 16px; padding: 24px; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .modal-header h2 { margin: 0; font-size: 18px; }
+    .btn-close-modal { background: none; border: 0; font-size: 22px; cursor: pointer; color: #666; font-weight: 700; }
+    .modal-body h3 { font-size: 15px; margin: 16px 0 8px; }
+    .modal-body p, .modal-body ul { font-size: 14px; line-height: 1.5; color: #333; margin: 0 0 12px; }
+    .modal-body ul { padding-left: 20px; }
   </style>
 </head>
 <body>
@@ -241,20 +281,8 @@
   <div class="toolbar" id="toolbar">
     <input type="text" id="search-bar" class="search-input" placeholder="Search line or station (e.g., Stratford, Canonbury, Victoria)...">
     
-    <select id="station-select" class="select-input" style="display: none;">
-      <option value="">-- Select a Station --</option>
-      <option value="940GZZLUSPB">Shepherd's Bush (Central Line)</option>
-      <option value="910GSHPBSH">Shepherd's Bush (Overground / Mildmay)</option>
-      <option value="940GZZLUKSX">King's Cross St. Pancras</option>
-      <option value="940GZZLUOXC">Oxford Circus</option>
-      <option value="940GZZLUVCT">Victoria</option>
-      <option value="940GZZLUBNK">Bank / Monument</option>
-      <option value="940GZZLUSTD">Stratford</option>
-      <option value="940GZZLULBG">London Bridge</option>
-      <option value="940GZZLUEDB">Ealing Broadway</option>
-      <option value="910GCLPHMJ1">Clapham Junction</option>
-      <option value="910GHACKNYC">Hackney Central</option>
-    </select>
+    <!-- Dynamic Station Autocomplete Menu -->
+    <div id="station-dropdown" class="search-results-dropdown"></div>
 
     <div class="toolbar-row">
       <div class="controls">
@@ -269,11 +297,46 @@
   <div id="results"><div class="message">Loading status…</div></div>
 </main>
 
+<footer>
+  Need help? <a id="open-help-modal">How to use this page</a>
+</footer>
+
+<!-- How to Use Popup Modal -->
+<div class="modal-overlay" id="help-modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>How to use TfL Status Simplified</h2>
+      <button class="btn-close-modal" id="close-help-modal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p>This app translates complex TfL updates into clear, visual route maps so you can quickly see which stations are delayed or closed.</p>
+
+      <h3>🔴 Live Status Tab</h3>
+      <p>Shows all Tube, Overground, DLR, and Elizabeth Line routes sorted by service health.</p>
+      <ul>
+        <li><strong>🔴 Red:</strong> Section closed or no service.</li>
+        <li><strong>🟠 Orange:</strong> Severe delays across the line.</li>
+        <li><strong>🟡 Yellow:</strong> Minor delays or reduced service.</li>
+        <li><strong>🟢 Green:</strong> Good service operating normally.</li>
+        <li><strong>🗺️ Visual Map:</strong> Tap "Show visual map" under any disrupted line to view a vertical tube map highlighting closed stations.</li>
+        <li><strong>⭐ Favorites:</strong> Tap the star next to a line to pin it. Check "Favorites only" to view your daily routes quickly.</li>
+      </ul>
+
+      <h3>🗺️ Network Map Tab</h3>
+      <p>An interactive grid overview of the entire network. Displays summaries like <em>"✓ Normal service"</em> or <em>"⚠️ Part of line affected"</em>. Tap any line to view its individual visual route map.</p>
+
+      <h3>⏱️ Live Timetable Tab</h3>
+      <p>Type any London station name in the search bar to find live arrivals for all platforms and serving lines.</p>
+    </div>
+  </div>
+</div>
+
 <script>
 const API_LIVE = "https://api.tfl.gov.uk/Line/Mode/tube,dlr,elizabeth-line,overground/Status?detail=true";
 
 let currentTab = "live";
 let selectedLineDetailId = null;
+let selectedStopPointId = null;
 let lastUpdatedTime = null;
 let cachedLiveMapData = [];
 let favoriteLines = new Set(JSON.parse(localStorage.getItem("tfl_fav_lines") || "[]"));
@@ -296,7 +359,6 @@ const LINE_COLORS = {
   "tram": { var: "var(--color-tram)", text: "#111" }
 };
 
-// MASTER NETWORK ROUTE DEFINITIONS FOR ALL LINES
 const LINE_ROUTES = {
   "bakerloo": [
     "Harrow & Wealdstone", "Kenton", "South Kenton", "North Wembley", "Wembley Central",
@@ -438,7 +500,6 @@ function classify(statusText) {
   return { type: "minor", label: statusText || "Unknown" };
 }
 
-// INTELLIGENT DISruption EVALUATOR
 function analyzeRouteStatus(lineId, statusObj) {
   const route = LINE_ROUTES[lineId] || [];
   const stationStatuses = new Map();
@@ -457,7 +518,6 @@ function analyzeRouteStatus(lineId, statusObj) {
     const reason = status.reason || status.disruption?.description || "";
     const lowerReason = reason.toLowerCase();
 
-    // 1. Check for specific closed boundaries ("between A and B")
     const closedRegex = /(?:no service|suspended|part closure|closed|part suspended)\s+(?:between|from)\s+([a-z0-9\s&'-]+?)\s+(?:and|to)\s+([a-z0-9\s&'-]+?)(?=\s+due|\s+while|\s+and|\.|$)/gi;
     let match;
     let foundRange = false;
@@ -486,13 +546,11 @@ function analyzeRouteStatus(lineId, statusObj) {
       }
     }
 
-    // 2. Entire line closure / suspension fallback
     if (mainSeverity.type === "closed" && !foundRange) {
       route.forEach((_, idx) => stationStatuses.set(idx, "closed"));
       addBanner("closed", "No service on line");
     }
 
-    // 3. Severe / Minor Delays across rest of line
     if (lowerReason.includes("severe delays") || (mainSeverity.type === "severe" && stationStatuses.size === 0)) {
       route.forEach((_, idx) => {
         if (!stationStatuses.has(idx)) {
@@ -609,14 +667,53 @@ function cardLive(line, forceOpenMap = false) {
   </article>`;
 }
 
-async function loadLiveTimetable(stopPointId) {
-  const results = document.getElementById("results");
-  if (!stopPointId) {
-    results.innerHTML = `<div class="message">Please select a station from the dropdown above.</div>`;
+// DYNAMIC STATION AUTOCOMPLETE & LIVE ARRIVALS ENGINE
+let searchTimeout = null;
+async function searchStations(query) {
+  const dropdown = document.getElementById("station-dropdown");
+  if (!query || query.length < 2) {
+    dropdown.style.display = "none";
     return;
   }
 
-  results.innerHTML = `<div class="message">Fetching live train arrivals…</div>`;
+  try {
+    const url = `https://api.tfl.gov.uk/StopPoint/Search/${encodeURIComponent(query)}?modes=tube,dlr,elizabeth-line,overground&maxResults=8`;
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    if (!data.matches || data.matches.length === 0) {
+      dropdown.style.display = "none";
+      return;
+    }
+
+    dropdown.innerHTML = data.matches.map(st => `
+      <div class="search-result-item" onclick="selectStationForTimetable('${st.id}', '${escapeHtml(st.name.replace(/'/g, "\\'"))}')">
+        <span>📍 ${escapeHtml(st.name)}</span>
+        <span class="station-modes">${escapeHtml((st.modes || []).join(', '))}</span>
+      </div>
+    `).join('');
+    dropdown.style.display = "block";
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function selectStationForTimetable(stopPointId, stationName) {
+  selectedStopPointId = stopPointId;
+  document.getElementById("search-bar").value = stationName;
+  document.getElementById("station-dropdown").style.display = "none";
+  loadLiveTimetable(stopPointId, stationName);
+}
+
+async function loadLiveTimetable(stopPointId, stationName = "") {
+  const results = document.getElementById("results");
+  if (!stopPointId) {
+    results.innerHTML = `<div class="message">Type a station name above to search for live train departures.</div>`;
+    return;
+  }
+
+  results.innerHTML = `<div class="message">Fetching live arrivals for ${escapeHtml(stationName || "station")}…</div>`;
 
   try {
     const url = `https://api.tfl.gov.uk/StopPoint/${stopPointId}/Arrivals`;
@@ -625,7 +722,7 @@ async function loadLiveTimetable(stopPointId) {
     const arrivals = await response.json();
 
     if (!arrivals || arrivals.length === 0) {
-      results.innerHTML = `<div class="message">No live departures found for this station right now.</div>`;
+      results.innerHTML = `<div class="message">No upcoming train departures found for <strong>${escapeHtml(stationName)}</strong> right now.</div>`;
       return;
     }
 
@@ -641,7 +738,7 @@ async function loadLiveTimetable(stopPointId) {
       grouped[groupKey].push(train);
     });
 
-    let html = "";
+    let html = `<div style="font-weight: 800; font-size: 16px; margin-bottom: 12px; color: #111;">📍 Live Departures for ${escapeHtml(stationName)}</div>`;
     for (const [title, trains] of Object.entries(grouped)) {
       html += `<div class="timetable-group">
         <div class="timetable-group-title">
@@ -670,7 +767,7 @@ async function loadLiveTimetable(stopPointId) {
     updateRelativeTime();
   } catch (err) {
     console.error(err);
-    results.innerHTML = `<div class="message"><strong>Could not load arrivals.</strong><p>Please try another station.</p></div>`;
+    results.innerHTML = `<div class="message"><strong>Could not load arrivals.</strong><p>Please try searching for the station again.</p></div>`;
   }
 }
 
@@ -814,13 +911,22 @@ async function loadStatus() {
   }
 }
 
+// Modal Event Bindings
+const helpModal = document.getElementById("help-modal");
+document.getElementById("open-help-modal").addEventListener("click", () => helpModal.classList.add("open"));
+document.getElementById("close-help-modal").addEventListener("click", () => helpModal.classList.remove("open"));
+helpModal.addEventListener("click", (e) => {
+  if (e.target === helpModal) helpModal.classList.remove("open");
+});
+
 document.getElementById("tab-live").addEventListener("click", (e) => {
   currentTab = "live";
   selectedLineDetailId = null;
   setActiveTab(e.target);
-  document.getElementById("search-bar").style.display = "block";
-  document.getElementById("station-select").style.display = "none";
+  document.getElementById("search-bar").value = "";
+  document.getElementById("search-bar").placeholder = "Search line or station (e.g., Stratford, Canonbury, Victoria)...";
   document.getElementById("fav-label").style.display = "flex";
+  document.getElementById("station-dropdown").style.display = "none";
   loadStatus();
 });
 
@@ -828,26 +934,22 @@ document.getElementById("tab-map").addEventListener("click", (e) => {
   currentTab = "map";
   selectedLineDetailId = null;
   setActiveTab(e.target);
-  document.getElementById("search-bar").style.display = "block";
-  document.getElementById("station-select").style.display = "none";
+  document.getElementById("search-bar").value = "";
+  document.getElementById("search-bar").placeholder = "Search line or station (e.g., Stratford, Canonbury, Victoria)...";
   document.getElementById("fav-label").style.display = "none";
+  document.getElementById("station-dropdown").style.display = "none";
   loadStatus();
 });
 
 document.getElementById("tab-timetable").addEventListener("click", (e) => {
   currentTab = "timetable";
   selectedLineDetailId = null;
+  selectedStopPointId = null;
   setActiveTab(e.target);
-  document.getElementById("search-bar").style.display = "none";
-  document.getElementById("station-select").style.display = "block";
+  document.getElementById("search-bar").value = "";
+  document.getElementById("search-bar").placeholder = "Type any station name (e.g. Oxford Circus, King's Cross)...";
   document.getElementById("fav-label").style.display = "none";
-  
-  const selectedStation = document.getElementById("station-select").value;
-  if (selectedStation) {
-    loadLiveTimetable(selectedStation);
-  } else {
-    document.getElementById("results").innerHTML = `<div class="message">Please select a station above to view live train departures.</div>`;
-  }
+  document.getElementById("results").innerHTML = `<div class="message">Type a London station name in the search bar above to view live train departures.</div>`;
 });
 
 function setActiveTab(target) {
@@ -855,22 +957,26 @@ function setActiveTab(target) {
   target.classList.add('active');
 }
 
-document.getElementById("station-select").addEventListener("change", (e) => {
+document.getElementById("search-bar").addEventListener("input", (e) => {
+  const query = e.target.value.trim();
   if (currentTab === "timetable") {
-    loadLiveTimetable(e.target.value);
-  }
-});
-
-document.getElementById("btn-refresh").addEventListener("click", () => {
-  if (currentTab === "timetable") {
-    const selectedStation = document.getElementById("station-select").value;
-    loadLiveTimetable(selectedStation);
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => searchStations(query), 300);
   } else {
     loadStatus();
   }
 });
 
-document.getElementById("search-bar").addEventListener("input", loadStatus);
+document.getElementById("btn-refresh").addEventListener("click", () => {
+  if (currentTab === "timetable") {
+    if (selectedStopPointId) {
+      loadLiveTimetable(selectedStopPointId, document.getElementById("search-bar").value);
+    }
+  } else {
+    loadStatus();
+  }
+});
+
 document.getElementById("filter-favs").addEventListener("change", loadStatus);
 
 loadStatus();
