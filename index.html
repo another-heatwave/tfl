@@ -10,6 +10,24 @@
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: #111;
       background: #f2f2f2;
+      
+      /* TfL Official Line Colors */
+      --color-bakerloo: #B16300;
+      --color-central: #E32017;
+      --color-circle: #FFD300;
+      --color-district: #00782A;
+      --color-hammersmith-city: #F589A6;
+      --color-jubilee: #A0A5A9;
+      --color-metropolitan: #9B0056;
+      --color-northern: #000000;
+      --color-piccadilly: #0019A8;
+      --color-victoria: #0098D4;
+      --color-waterloo-city: #95CDBA;
+      --color-dlr: #00A4A6;
+      --color-london-overground: #EE7C0E;
+      --color-elizabeth: #6950A1;
+      --color-tram: #84B817;
+      --color-default: #777777;
     }
     * { box-sizing: border-box; }
     body { margin: 0; background: #f2f2f2; }
@@ -20,6 +38,32 @@
     }
     header h1 { margin: 0; font-size: 22px; }
     header p { margin: 5px 0 0; color: #d0d0d0; font-size: 14px; }
+    
+    /* Navigation Tab Switcher */
+    .tab-bar {
+      display: flex;
+      background: #222;
+      padding: 4px;
+      margin-top: 14px;
+      border-radius: 10px;
+    }
+    .tab-btn {
+      flex: 1;
+      background: transparent;
+      color: #aaa;
+      border: 0;
+      padding: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+    .tab-btn.active {
+      background: #fff;
+      color: #111;
+    }
+
     main { max-width: 760px; margin: auto; padding: 16px; }
     .toolbar {
       display: flex; justify-content: space-between; align-items: center;
@@ -28,19 +72,15 @@
     .controls { display: flex; align-items: center; gap: 12px; }
     .toggle-label { font-size: 13px; font-weight: 600; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 6px; }
     #updated { color: #666; font-size: 13px; }
-    button {
+    button.refresh {
       border: 0; border-radius: 9px; padding: 9px 13px;
-      font-weight: 700; cursor: pointer;
+      font-weight: 700; cursor: pointer; background: #111; color: white;
     }
-    .refresh { background: #111; color: white; }
     .card {
       background: white; border-radius: 12px; margin-bottom: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,.08); overflow: hidden;
-      border-left: 7px solid #777;
+      border-left: 8px solid var(--line-color, var(--color-default));
     }
-    .card.good { border-left-color: #148a36; }
-    .card.bad { border-left-color: #c62828; }
-    .card.warning { border-left-color: #e18b00; }
     .top {
       padding: 15px; display: flex; justify-content: space-between;
       gap: 12px; align-items: center;
@@ -53,66 +93,43 @@
     .details { padding: 0 15px 15px; border-top: 1px solid #eee; }
     .affected { margin: 14px 0 8px; font-weight: 800; font-size: 14px; }
     
+    /* Planned Works Styling */
+    .planned-desc {
+      font-size: 14px;
+      line-height: 1.4;
+      color: #333;
+    }
+
     /* Visual Line Route Diagram */
     .line-diagram {
-      display: flex;
-      flex-direction: column;
-      margin: 14px 0 10px 8px;
+      display: flex; flex-direction: column; margin: 14px 0 10px 8px;
     }
     .diagram-node {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      position: relative;
-      padding: 5px 0;
+      display: flex; align-items: center; gap: 12px; position: relative; padding: 5px 0;
     }
     .diagram-node::before {
-      content: '';
-      position: absolute;
-      left: 7px;
-      top: 0;
-      bottom: 0;
-      width: 4px;
-      background: #ddd;
-      z-index: 1;
+      content: ''; position: absolute; left: 7px; top: 0; bottom: 0;
+      width: 4px; background: var(--line-color, var(--color-default)); opacity: 0.3; z-index: 1;
     }
     .diagram-node:first-child::before { top: 50%; }
     .diagram-node:last-child::before { bottom: 50%; }
-    .diagram-node.segment-affected::before { background: #c62828; }
+    .diagram-node.segment-affected::before { background: #c62828; opacity: 1; width: 6px; left: 6px; }
     
     .dot {
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: white;
-      border: 4px solid #aaa;
-      z-index: 2;
-      flex-shrink: 0;
+      width: 18px; height: 18px; border-radius: 50%; background: white;
+      border: 4px solid var(--line-color, var(--color-default)); z-index: 2; flex-shrink: 0;
     }
     .diagram-node.node-affected .dot {
-      background: #c62828;
-      border-color: #c62828;
+      background: #c62828; border-color: #c62828;
     }
-    .node-name {
-      font-size: 13px;
-      color: #666;
-    }
-    .diagram-node.node-affected .node-name {
-      color: #c62828;
-      font-weight: 800;
-    }
+    .node-name { font-size: 13px; color: #666; }
+    .diagram-node.node-affected .node-name { color: #c62828; font-weight: 800; }
 
     /* Standard station tags layout */
     .stations { display: flex; flex-wrap: wrap; gap: 6px; }
-    .station {
-      background: #eee; border-radius: 999px; padding: 6px 9px;
-      font-size: 13px;
-    }
+    .station { background: #eee; border-radius: 999px; padding: 6px 9px; font-size: 13px; }
     .station.affected-pill {
-      background: #ffebee;
-      color: #c62828;
-      border: 1px solid #ffcdd2;
-      font-weight: 700;
+      background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; font-weight: 700;
     }
 
     details { margin-top: 13px; }
@@ -121,22 +138,25 @@
       background: #f5f5f5; padding: 10px; margin-top: 8px;
       font-size: 13px; line-height: 1.4; border-radius: 6px;
     }
-    .message {
-      background: white; padding: 18px; border-radius: 12px;
-    }
+    .message { background: white; padding: 18px; border-radius: 12px; }
   </style>
 </head>
 <body>
 <header>
   <h1>TfL Status Simplified</h1>
   <p>See which parts of a line are affected, without deciphering TfL's wording.</p>
+  
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tab-live">Live Status</button>
+    <button class="tab-btn" id="tab-planned">Planned Works</button>
+  </div>
 </header>
 
 <main>
   <div class="toolbar">
     <div class="controls">
       <button class="refresh" id="refresh">Refresh</button>
-      <label class="toggle-label">
+      <label class="toggle-label" id="diagram-toggle-label">
         <input type="checkbox" id="show-diagram" checked> Visual line route
       </label>
     </div>
@@ -146,9 +166,31 @@
 </main>
 
 <script>
-const API = "https://api.tfl.gov.uk/Line/Mode/tube,dlr,elizabeth-line,overground/Status?detail=true";
+const API_LIVE = "https://api.tfl.gov.uk/Line/Mode/tube,dlr,elizabeth-line,overground/Status?detail=true";
+const API_PLANNED = "https://api.tfl.gov.uk/Line/Mode/tube,dlr,elizabeth-line,overground/Disruption";
 
-// Ordered station sequences per line ID to infer intermediate affected stations
+let currentTab = "live";
+
+// TfL Official Color CSS Variable Mapper
+const LINE_COLORS = {
+  "bakerloo": "var(--color-bakerloo)",
+  "central": "var(--color-central)",
+  "circle": "var(--color-circle)",
+  "district": "var(--color-district)",
+  "hammersmith-city": "var(--color-hammersmith-city)",
+  "jubilee": "var(--color-jubilee)",
+  "metropolitan": "var(--color-metropolitan)",
+  "northern": "var(--color-northern)",
+  "piccadilly": "var(--color-piccadilly)",
+  "victoria": "var(--color-victoria)",
+  "waterloo-city": "var(--color-waterloo-city)",
+  "dlr": "var(--color-dlr)",
+  "london-overground": "var(--color-london-overground)",
+  "elizabeth": "var(--color-elizabeth)",
+  "tram": "var(--color-tram)"
+};
+
+// Line route station maps
 const LINE_ROUTES = {
   "london-overground": [
     "Richmond", "Kew Gardens", "Gunnersbury", "South Acton", "Acton Central", 
@@ -213,10 +255,6 @@ function escapeHtml(value) {
   return div.innerHTML;
 }
 
-function getDescription(status) {
-  return status?.reason || status?.disruption?.description || "";
-}
-
 function classify(status) {
   const text = status?.statusSeverityDescription || "Unknown";
   const lower = text.toLowerCase();
@@ -232,8 +270,6 @@ function getAffectedIndices(lineId, description) {
   if (!description) return { route, affectedIndices };
 
   const lowerDesc = description.toLowerCase();
-
-  // Look for pattern "between [Station A] and [Station B]"
   const betweenRegex = /between\s+([a-z0-9\s&'-]+?)\s+and\s+([a-z0-9\s&'-]+?)(?=\s+due|\s+while|\s+and|\.|$)/gi;
   let match;
 
@@ -247,18 +283,13 @@ function getAffectedIndices(lineId, description) {
     if (idxA !== -1 && idxB !== -1) {
       const start = Math.min(idxA, idxB);
       const end = Math.max(idxA, idxB);
-      for (let i = start; i <= end; i++) {
-        affectedIndices.add(i);
-      }
+      for (let i = start; i <= end; i++) affectedIndices.add(i);
     }
   }
 
-  // Fallback: If no ranges matched, mark any single station explicitly named in the description
   if (affectedIndices.size === 0) {
     route.forEach((station, idx) => {
-      if (lowerDesc.includes(station.toLowerCase())) {
-        affectedIndices.add(idx);
-      }
+      if (lowerDesc.includes(station.toLowerCase())) affectedIndices.add(idx);
     });
   }
 
@@ -281,16 +312,17 @@ function buildDiagramHtml(route, affectedIndices) {
   `</div>`;
 }
 
-function card(line, showVisualMap) {
+function cardLive(line, showVisualMap) {
   const status = line.lineStatuses?.[0];
   if (!status) return "";
 
   const info = classify(status);
-  const description = getDescription(status);
+  const description = status.reason || status.disruption?.description || "";
   const { route, affectedIndices } = getAffectedIndices(line.id, description);
+  const lineColor = LINE_COLORS[line.id] || "var(--color-default)";
 
   if (info.cls === "good") {
-    return `<article class="card good">
+    return `<article class="card good" style="--line-color: ${lineColor};">
       <div class="top">
         <div class="line-name">${escapeHtml(line.name)}</div>
         <div class="status">Good service</div>
@@ -312,7 +344,7 @@ function card(line, showVisualMap) {
     `;
   }
 
-  return `<article class="card ${info.cls}">
+  return `<article class="card ${info.cls}" style="--line-color: ${lineColor};">
     <div class="top">
       <div class="line-name">${escapeHtml(line.name)}</div>
       <div class="status">${escapeHtml(info.text)}</div>
@@ -328,39 +360,85 @@ function card(line, showVisualMap) {
   </article>`;
 }
 
+function cardPlanned(item) {
+  const lineName = item.categoryDescription || "Planned Work";
+  const description = item.description || "No detail provided.";
+  
+  return `<article class="card warning">
+    <div class="top">
+      <div class="line-name">${escapeHtml(lineName)}</div>
+      <div class="status">Planned Disruption</div>
+    </div>
+    <div class="details" style="padding-top: 15px;">
+      <div class="planned-desc">${escapeHtml(description)}</div>
+    </div>
+  </article>`;
+}
+
 async function loadStatus() {
   const results = document.getElementById("results");
   const updated = document.getElementById("updated");
   const showVisualMap = document.getElementById("show-diagram").checked;
 
-  results.innerHTML = `<div class="message">Loading TfL status…</div>`;
+  results.innerHTML = `<div class="message">Loading ${currentTab === "live" ? "live status" : "planned works"}…</div>`;
 
   try {
-    const response = await fetch(API);
-    if (!response.ok) throw new Error("HTTP " + response.status);
-    const data = await response.json();
+    if (currentTab === "live") {
+      const response = await fetch(API_LIVE);
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const data = await response.json();
 
-    data.sort((a, b) => {
-      const ag = (a.lineStatuses?.[0]?.statusSeverityDescription || "").toLowerCase().includes("good");
-      const bg = (b.lineStatuses?.[0]?.statusSeverityDescription || "").toLowerCase().includes("good");
-      return Number(ag) - Number(bg);
-    });
+      data.sort((a, b) => {
+        const ag = (a.lineStatuses?.[0]?.statusSeverityDescription || "").toLowerCase().includes("good");
+        const bg = (b.lineStatuses?.[0]?.statusSeverityDescription || "").toLowerCase().includes("good");
+        return Number(ag) - Number(bg);
+      });
 
-    results.innerHTML = data.map(line => card(line, showVisualMap)).join("");
+      results.innerHTML = data.map(line => cardLive(line, showVisualMap)).join("");
+    } else {
+      const response = await fetch(API_PLANNED);
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const data = await response.json();
+
+      if (!data || data.length === 0) {
+        results.innerHTML = `<div class="message">No planned closures currently scheduled.</div>`;
+      } else {
+        results.innerHTML = data.map(cardPlanned).join("");
+      }
+    }
+
     updated.textContent = "Last checked " + new Date().toLocaleTimeString();
   } catch (error) {
     console.error(error);
     results.innerHTML = `
       <div class="message">
-        <strong>Couldn't load TfL status.</strong>
+        <strong>Couldn't load information.</strong>
         <p>Check your internet connection and try again.</p>
       </div>`;
     updated.textContent = "Unable to update";
   }
 }
 
+// Tab Switching Mechanics
+document.getElementById("tab-live").addEventListener("click", (e) => {
+  currentTab = "live";
+  e.target.classList.add("active");
+  document.getElementById("tab-planned").classList.remove("active");
+  document.getElementById("diagram-toggle-label").style.display = "flex";
+  loadStatus();
+});
+
+document.getElementById("tab-planned").addEventListener("click", (e) => {
+  currentTab = "planned";
+  e.target.classList.add("active");
+  document.getElementById("tab-live").classList.remove("active");
+  document.getElementById("diagram-toggle-label").style.display = "none";
+  loadStatus();
+});
+
 document.getElementById("refresh").addEventListener("click", loadStatus);
 document.getElementById("show-diagram").addEventListener("change", loadStatus);
+
 loadStatus();
 setInterval(loadStatus, 60_000);
 </script>
