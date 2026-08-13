@@ -708,7 +708,7 @@ function selectStationForTimetable(stopPointId, stationName) {
   loadLiveTimetable(stopPointId, stationName);
 }
 
-// UNIVERSAL ARRIVALS FETCH ENGINE
+// MULTI-POINT ARRIVALS FETCH ENGINE WITH HUB RESOLUTION
 async function loadLiveTimetable(stopPointId, stationName = "") {
   const results = document.getElementById("results");
   if (!stopPointId) {
@@ -719,30 +719,33 @@ async function loadLiveTimetable(stopPointId, stationName = "") {
   results.innerHTML = `<div class="message">Fetching live arrivals for ${escapeHtml(stationName || "station")}…</div>`;
 
   try {
-    const url = `https://api.tfl.gov.uk/StopPoint/${stopPointId}/Arrivals`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error("HTTP " + response.status);
-    let arrivals = await response.json();
+    let idsToFetch = [stopPointId];
 
-    // If initial StopPoint returns 0 results, query child stops if it's a hub
-    if ((!arrivals || arrivals.length === 0) && stopPointId.startsWith("HUB")) {
-      const hubUrl = `https://api.tfl.gov.uk/StopPoint/${stopPointId}`;
-      const hubRes = await fetch(hubUrl);
-      if (hubRes.ok) {
-        const hubData = await hubRes.json();
-        const childIds = (hubData.children || []).map(c => c.id).filter(Boolean);
-        if (childIds.length > 0) {
-          const childArrivalsUrl = `https://api.tfl.gov.uk/StopPoint/${childIds.join(',')}/Arrivals`;
-          const childRes = await fetch(childArrivalsUrl);
-          if (childRes.ok) {
-            arrivals = await childRes.json();
-          }
+    // If selected ID is a HUB, expand into physical stop IDs
+    if (stopPointId.startsWith("HUB") || stopPointId.startsWith("910G") || stopPointId.startsWith("940G")) {
+      const detailUrl = `https://api.tfl.gov.uk/StopPoint/${stopPointId}`;
+      const detailRes = await fetch(detailUrl);
+      if (detailRes.ok) {
+        const detailData = await detailRes.json();
+        const children = (detailData.children || []).map(c => c.id).filter(Boolean);
+        if (children.length > 0) {
+          idsToFetch = [stopPointId, ...children];
         }
       }
     }
 
+    // Query StopPoint arrivals
+    const arrivalsUrl = `https://api.tfl.gov.uk/StopPoint/${idsToFetch.slice(0, 10).join(',')}/Arrivals`;
+    const response = await fetch(arrivalsUrl);
+    
+    if (!response.ok) {
+      throw new Error("HTTP " + response.status);
+    }
+
+    let arrivals = await response.json();
+
     if (!arrivals || arrivals.length === 0) {
-      results.innerHTML = `<div class="message">No upcoming train departures found for <strong>${escapeHtml(stationName)}</strong> right now.</div>`;
+      results.innerHTML = `<div class="message">No upcoming train departures found for <strong>${escapeHtml(stationName)}</strong> right now. Services may be closed or operating with limited live telemetry.</div>`;
       return;
     }
 
@@ -787,7 +790,7 @@ async function loadLiveTimetable(stopPointId, stationName = "") {
     updateRelativeTime();
   } catch (err) {
     console.error(err);
-    results.innerHTML = `<div class="message"><strong>Could not load arrivals.</strong><p>Please try searching for another station.</p></div>`;
+    results.innerHTML = `<div class="message"><strong>Could not load arrivals.</strong><p>Network query failed (${escapeHtml(err.message)}). Try selecting the station again or clicking refresh.</p></div>`;
   }
 }
 
