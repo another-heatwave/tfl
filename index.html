@@ -45,7 +45,6 @@
     header h1 { margin: 0; font-size: 22px; }
     header p { margin: 5px 0 0; color: #d0d0d0; font-size: 14px; }
     
-    /* Navigation Tab Switcher */
     .tab-bar {
       display: flex;
       background: #222;
@@ -73,7 +72,6 @@
 
     main { max-width: 760px; margin: auto; padding: 16px; }
     
-    /* Toolbar Controls */
     .toolbar {
       display: flex;
       flex-direction: column;
@@ -120,7 +118,6 @@
       font-size: 13px; margin-bottom: 14px; display: inline-flex; align-items: center; gap: 6px;
     }
 
-    /* Line Cards */
     .card {
       background: white; border-radius: 12px; margin-bottom: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,.08); overflow: hidden;
@@ -153,7 +150,6 @@
     
     .details { padding: 0 15px 15px; border-top: 1px solid #f0f0f0; }
 
-    /* Segment Summaries */
     .segment-summary {
       font-size: 13px; font-weight: 700;
       padding: 8px 12px; border-radius: 0 6px 6px 0; margin-top: 12px;
@@ -162,7 +158,6 @@
     .segment-summary.severe { background: #fff3e0; border-left: 3px solid var(--status-severe); color: var(--status-severe); }
     .segment-summary.minor { background: #fffde7; border-left: 3px solid var(--status-minor); color: #827717; }
 
-    /* Visual Line Route Diagram */
     .line-diagram { display: flex; flex-direction: column; margin: 14px 0 10px 8px; }
     .diagram-node { display: flex; align-items: center; gap: 12px; position: relative; padding: 7px 0; }
     
@@ -173,12 +168,10 @@
     .diagram-node:first-child::before { top: 50%; }
     .diagram-node:last-child::before { bottom: 50%; }
     
-    /* Segment Tracks by Severity */
     .diagram-node.track-closed::before { background: var(--status-closed) !important; opacity: 1 !important; width: 6px !important; left: 6px !important; }
     .diagram-node.track-severe::before { background: var(--status-severe) !important; opacity: 1 !important; width: 6px !important; left: 6px !important; }
     .diagram-node.track-minor::before { background: var(--status-minor) !important; opacity: 1 !important; width: 6px !important; left: 6px !important; }
     
-    /* Station Node Dots */
     .dot {
       width: 18px; height: 18px; border-radius: 50%; background: white;
       border: 4px solid var(--line-color, var(--color-default)); z-index: 2; flex-shrink: 0;
@@ -193,20 +186,11 @@
     .diagram-node.dot-severe .node-name { color: var(--status-severe); font-weight: 800; }
     .diagram-node.dot-minor .node-name { color: #827717; font-weight: 700; }
     
-    /* Status Badges on Route Maps */
     .status-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; color: white; padding: 2px 6px; border-radius: 4px; }
     .status-tag.closed { background: var(--status-closed); }
     .status-tag.severe { background: var(--status-severe); }
     .status-tag.minor { background: var(--status-minor); }
 
-    /* Station Tags Pill Layout */
-    .stations { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-    .station { background: #eee; border-radius: 999px; padding: 6px 9px; font-size: 13px; }
-    .station.pill-closed { background: #ffebee; color: var(--status-closed); border: 1px solid #ffcdd2; font-weight: 700; }
-    .station.pill-severe { background: #fff3e0; color: var(--status-severe); border: 1px solid #ffe0b2; font-weight: 700; }
-    .station.pill-minor { background: #fffde7; color: #827717; border: 1px solid #fff9c4; font-weight: 700; }
-
-    /* Network Grid Styling */
     .network-container { background: white; border-radius: 12px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
     .network-title { font-size: 16px; font-weight: 800; margin-bottom: 12px; }
     .network-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
@@ -277,16 +261,15 @@ const LINE_COLORS = {
   "tram": { var: "var(--color-tram)", text: "#111" }
 };
 
-// Route Station Lists
 const LINE_ROUTES = {
   "london-overground": [
     "Richmond", "Kew Gardens", "Gunnersbury", "South Acton", "Acton Central", 
     "Willesden Junction", "Kensal Rise", "Brondesbury Park", "Brondesbury", 
     "West Hampstead", "Finchley Road & Frognal", "Hampstead Heath", "Gospel Oak", 
-    "Upper Holloway", "Crouch Hill", "Harringay Green Lanes", "Tottenham Hale", 
-    "Blackhorse Road", "Walthamstow Queen's Road", "Leyton Midland Road", 
-    "Leytonstone High Road", "Wanstead Park", "Woodgrange Park", "Barking", "Barking Riverside",
-    "Canonbury", "Highbury & Islington", "Caledonian Road & Barnsbury", "Camden Road", "Hackney Central", "Homerton", "Hackney Wick", "Stratford", "Clapham Junction"
+    "Kentish Town West", "Camden Road", "Caledonian Road & Barnsbury", "Highbury & Islington", 
+    "Canonbury", "Dalston Kingsland", "Hackney Central", "Homerton", "Hackney Wick", "Stratford",
+    "Clapham Junction", "Upper Holloway", "Crouch Hill", "Harringay Green Lanes", "Blackhorse Road",
+    "Walthamstow Queen's Road", "Leyton Midland Road", "Leytonstone High Road", "Wanstead Park", "Woodgrange Park", "Barking", "Barking Riverside"
   ],
   "victoria": [
     "Brixton", "Stockwell", "Vauxhall", "Pimlico", "Victoria", "Green Park", 
@@ -342,6 +325,10 @@ function escapeHtml(value) {
   return div.innerHTML;
 }
 
+function cleanStationName(str) {
+  return str.toLowerCase().replace(/\s*(station|underground station|rail station)\s*/gi, '').trim();
+}
+
 function toggleFavorite(lineId) {
   if (favoriteLines.has(lineId)) {
     favoriteLines.delete(lineId);
@@ -352,21 +339,25 @@ function toggleFavorite(lineId) {
   loadStatus();
 }
 
-// Categorize Status Severity into Classes
 function classify(statusText) {
   const lower = (statusText || "").toLowerCase();
   if (lower.includes("good")) return { type: "good", label: "Good service" };
-  if (lower.includes("no service") || lower.includes("suspended") || lower.includes("part closure")) return { type: "closed", label: statusText };
+  if (lower.includes("no service") || lower.includes("suspended") || lower.includes("part closure") || lower.includes("closure")) return { type: "closed", label: statusText };
   if (lower.includes("severe")) return { type: "severe", label: statusText };
   if (lower.includes("minor") || lower.includes("delays") || lower.includes("reduced")) return { type: "minor", label: statusText };
   return { type: "minor", label: statusText || "Unknown" };
 }
 
-// ADVANCED ANALYSIS PARSER: Multi-Level Station Evaluation
 function analyzeRouteStatus(lineId, statusObj) {
   const route = LINE_ROUTES[lineId] || [];
-  const stationStatuses = new Map(); // Index -> 'closed' | 'severe' | 'minor'
-  let summaryBanners = [];
+  const stationStatuses = new Map();
+  const summaryBanners = [];
+
+  function addBanner(type, text) {
+    if (!summaryBanners.some(b => b.text === text)) {
+      summaryBanners.push({ type, text });
+    }
+  }
 
   const lineStatuses = statusObj?.lineStatuses || [];
 
@@ -375,23 +366,29 @@ function analyzeRouteStatus(lineId, statusObj) {
     const reason = status.reason || status.disruption?.description || "";
     const lowerReason = reason.toLowerCase();
 
-    // 1. Full Line Suspensions
+    // Whole line closures
     if (mainSeverity.type === "closed" && !lowerReason.includes("between") && !lowerReason.includes("from")) {
       route.forEach((_, idx) => stationStatuses.set(idx, "closed"));
-      summaryBanners.push({ type: "closed", text: "No service on entire line" });
+      addBanner("closed", "No service on entire line");
       return;
     }
 
-    // 2. Parse Specific Closed Ranges ("no service between A and B")
-    const closedRegex = /(?:no service|suspended|part closure|closed)\s+(?:between|from)\s+([a-z0-9\s&'-]+?)\s+(?:and|to)\s+([a-z0-9\s&'-]+?)(?=\s+due|\s+while|\s+and|\.|$)/gi;
+    // Closed range parsing ("no service between A and B")
+    const closedRegex = /(?:no service|suspended|part closure|closed|part suspended)\s+(?:between|from)\s+([a-z0-9\s&'-]+?)\s+(?:and|to)\s+([a-z0-9\s&'-]+?)(?=\s+due|\s+while|\s+and|\.|$)/gi;
     let match;
 
     while ((match = closedRegex.exec(lowerReason)) !== null) {
-      const startStr = match[1].trim();
-      const endStr = match[2].trim();
+      const startStr = cleanStationName(match[1]);
+      const endStr = cleanStationName(match[2]);
 
-      const idxA = route.findIndex(s => startStr.includes(s.toLowerCase()) || s.toLowerCase().includes(startStr));
-      const idxB = route.findIndex(s => endStr.includes(s.toLowerCase()) || s.toLowerCase().includes(endStr));
+      const idxA = route.findIndex(s => {
+        const cs = cleanStationName(s);
+        return startStr.includes(cs) || cs.includes(startStr);
+      });
+      const idxB = route.findIndex(s => {
+        const cs = cleanStationName(s);
+        return endStr.includes(cs) || cs.includes(endStr);
+      });
 
       if (idxA !== -1 && idxB !== -1) {
         const start = Math.min(idxA, idxB);
@@ -399,36 +396,35 @@ function analyzeRouteStatus(lineId, statusObj) {
         for (let i = start; i <= end; i++) {
           stationStatuses.set(i, "closed");
         }
-        summaryBanners.push({ type: "closed", text: `No service between ${route[start]} and ${route[end]}` });
+        addBanner("closed", `No service between ${route[start]} and ${route[end]}`);
       }
     }
 
-    // 3. Fallback/Remainder Severity (e.g. "SEVERE DELAYS on the rest of the line")
+    // Delays on remainder of line
     if (lowerReason.includes("severe delays") || mainSeverity.type === "severe") {
       route.forEach((_, idx) => {
         if (!stationStatuses.has(idx)) {
           stationStatuses.set(idx, "severe");
         }
       });
-      summaryBanners.push({ type: "severe", text: "Severe delays across line" });
+      addBanner("severe", "Severe delays on rest of the line");
     } else if (lowerReason.includes("minor delays") || mainSeverity.type === "minor") {
       route.forEach((_, idx) => {
         if (!stationStatuses.has(idx)) {
           stationStatuses.set(idx, "minor");
         }
       });
-      summaryBanners.push({ type: "minor", text: "Minor delays across line" });
+      addBanner("minor", "Minor delays on rest of the line");
     }
   });
 
   return { route, stationStatuses, summaryBanners };
 }
 
-// COLOR-CODED VISUAL DIAGRAM BUILDER
 function buildDiagramHtml(route, stationStatuses) {
   return `<div class="line-diagram">` + 
     route.map((station, i) => {
-      const statusType = stationStatuses.get(i); // 'closed' | 'severe' | 'minor' | undefined
+      const statusType = stationStatuses.get(i);
       const nextStatusType = stationStatuses.get(i + 1);
 
       let dotClass = "";
@@ -446,7 +442,6 @@ function buildDiagramHtml(route, stationStatuses) {
         tagHtml = `<span class="status-tag minor">Minor Delays</span>`;
       }
 
-      // Track connecting segment color
       if (statusType && nextStatusType) {
         if (statusType === "closed" && nextStatusType === "closed") trackClass = "track-closed";
         else if (statusType === "severe" || nextStatusType === "severe") trackClass = "track-severe";
@@ -488,12 +483,6 @@ function cardLive(line, forceOpenMap = false) {
     </article>`;
   }
 
-  // Generate Station Pills with individual severity colors
-  const stationPills = Array.from(stationStatuses.entries()).map(([idx, stType]) => 
-    `<span class="station pill-${stType}">${escapeHtml(route[idx])}</span>`
-  ).join("");
-
-  // Build Summary Banners
   const bannersHtml = summaryBanners.map(b => 
     `<div class="segment-summary ${b.type}">⚠️ ${escapeHtml(b.text)}</div>`
   ).join("");
@@ -518,7 +507,6 @@ function cardLive(line, forceOpenMap = false) {
     </div>
     <div class="details">
       ${bannersHtml}
-      ${stationPills ? `<div class="stations">${stationPills}</div>` : ""}
       ${routeVisualization}
       ${description ? `
         <details class="raw-details">
@@ -658,7 +646,6 @@ async function loadStatus() {
   }
 }
 
-// Navigation Events
 document.getElementById("tab-live").addEventListener("click", (e) => {
   currentTab = "live";
   selectedLineDetailId = null;
