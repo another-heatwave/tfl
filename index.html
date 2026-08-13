@@ -23,134 +23,10 @@
     main { max-width: 760px; margin: auto; padding: 16px; }
     .toolbar {
       display: flex; justify-content: space-between; align-items: center;
-      gap: 10px; margin-bottom: 14px;
-    }
-    #updated { color: #666; font-size: 13px; }
-    button {
-      border: 0; border-radius: 9px; padding: 9px 13px;
-      font-weight: 700; cursor: pointer;
-    }
-    .refresh { background: #111; color: white; }
-    .card {
-      background: white; border-radius: 12px; margin-bottom: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.08); overflow: hidden;
-      border-left: 7px solid #777;
-    }
-    .card.good { border-left-color: #148a36; }
-    .card.bad { border-left-color: #c62828; }
-    .card.warning { border-left-color: #e18b00; }
-    .top {
-      padding: 15px; display: flex; justify-content: space-between;
-      gap: 12px; align-items: center;
-    }
-    .line-name { font-size: 18px; font-weight: 800; }
-    .status { font-size: 14px; font-weight: 800; text-align: right; }
-    .good .status { color: #148a36; }
-    .bad .status { color: #c62828; }
-    .warning .status { color: #a66200; }
-    .details { padding: 0 15px 15px; border-top: 1px solid #eee; }
-    .affected { margin: 14px 0 8px; font-weight: 800; }
-    .stations { display: flex; flex-wrap: wrap; gap: 6px; }
-    .station {
-      background: #eee; border-radius: 999px; padding: 6px 9px;
-      font-size: 13px;
-    }
-    .station.bad-st {
-      background: #ffebee; color: #c62828; font-weight: 700; border: 1px solid #ffcdd2;
-    }
-    details { margin-top: 13px; }
-    summary { color: #555; cursor: pointer; font-size: 13px; font-weight: 600; }
-    .raw {
-      background: #f5f5f5; padding: 10px; margin-top: 8px;
-      font-size: 13px; line-height: 1.4; border-radius: 6px;
-    }
-    .message {
-      background: white; padding: 18px; border-radius: 12px;
-    }
-    
-    /* Line visual styling */
-    .line-diagram {
-      margin-top: 12px; position: relative; padding-left: 20px;
-      border-left: 4px solid #ccc; margin-left: 10px;
-    }
-    .node {
-      position: relative; margin-bottom: 8px; font-size: 13px; color: #777;
-    }
-    .node::before {
-      content: ""; position: absolute; left: -26px; top: 4px;
-      width: 8px; height: 8px; border-radius: 50%; background: #999;
-    }
-    .node.affected-node {
-      color: #c62828; font-weight: 700;
-    }
-    .node.affected-node::before {
-      background: #c62828; width: 12px; height: 12px; left: -28px; top: 2px;
-    }
-  </style>
-</head>
-<body>
-<header>
-  <h1>TfL Status Simplified</h1>
-  <p>See which parts of a line are affected, without deciphering TfL's wording.</p>
-</header>
-
-<main>
-  <div class="toolbar">
-    <div id="updated">Loading…</div>
-    <button class="refresh" id="refresh">Refresh</button>
-  </div>
-  <div id="results"><div class="message">Loading TfL status…</div></div>
-</main>
-
-<script>
-const API = "https://api.tfl.gov.uk/Line/Mode/tube,dlr,elizabeth-line,overground/Status?detail=true";
-
-// Master line station orders to calculate interval closures between two points
-const LINE_STATIONS = {
-  "bakerloo": ["Harrow & Wealdstone", "Kenton", "South Kenton", "North Wembley", "Wembley Central", "Stonebridge Park", "Harlesden", "Kensal Green", "Queen's Park", "Kilburn Park", "Maida Vale", "Warwick Avenue", "Paddington", "Edgware Road", "Marylebone", "Baker Street", "Regent's Park", "Oxford Circus", "Piccadilly Circus", "Charing Cross", "Embankment", "Waterloo", "Lambeth North", "Elephant & Castle"],
-  "central": ["Epping", "Theydon Bois", "Debden", "Loughton", "Buckhurst Hill", "Woodford", "South Woodford", "Snaresbrook", "Redbridge", "Gants Hill", "Newbury Park", "Barkingside", "Fairlop", "Hainault", "Grange Hill", "Chigwell", "Roding Valley", "Wanstead", "Leytonstone", "Leyton", "Stratford", "Mile End", "Bethnal Green", "Liverpool Street", "Bank", "St Paul's", "Chancery Lane", "Holborn", "Tottenham Court Road", "Oxford Circus", "Bond Street", "Marble Arch", "Lancaster Gate", "Queensway", "Notting Hill Gate", "Holland Park", "Shepherd's Bush", "White City", "East Acton", "North Acton", "West Acton", "Ealing Broadway", "Hanger Lane", "Perivale", "Greenford", "Northolt", "South Ruislip", "Ruislip Gardens", "West Ruislip"],
-  "circle": ["Hammersmith", "Goldhawk Road", "Shepherd's Bush Market", "Wood Lane", "Latimer Road", "Ladbroke Grove", "Westbourne Park", "Royal Oak", "Paddington", "Edgware Road", "Baker Street", "Great Portland Street", "Euston Square", "King's Cross St Pancras", "Farringdon", "Barbican", "Moorgate", "Liverpool Street", "Aldgate", "Tower Hill", "Monument", "Cannon Street", "Mansion House", "Blackfriars", "Temple", "Embankment", "Westminster", "St James's Park", "Victoria", "Sloane Square", "South Kensington", "Gloucester Road", "High Street Kensington", "Notting Hill Gate", "Bayswater"],
-  "district": ["Upminster", "Upminster Bridge", "Hornchurch", "Elm Park", "Dagenham East", "Dagenham Heathway", "Becontree", "Upney", "Barking", "East Ham", "Upton Park", "Plaistow", "West Ham", "Bromley-by-Bow", "Bow Road", "Mile End", "Stepney Green", "Whitechapel", "Aldgate East", "Tower Hill", "Monument", "Cannon Street", "Mansion House", "Blackfriars", "Temple", "Embankment", "Westminster", "St James's Park", "Victoria", "Sloane Square", "South Kensington", "Gloucester Road", "Earl's Court", "West Kensington", "Barons Court", "Hammersmith", "Ravenscourt Park", "Stamford Brook", "Turnham Green", "Chiswick Park", "Acton Town", "Ealing Common", "Ealing Broadway", "Kew Gardens", "Richmond", "West Brompton", "Fulham Broadway", "Parsons Green", "Putney Bridge", "East Putney", "Southfields", "Wimbledon Park", "Wimbledon"],
-  "hammersmith-city": ["Hammersmith", "Goldhawk Road", "Shepherd's Bush Market", "Wood Lane", "Latimer Road", "Ladbroke Grove", "Westbourne Park", "Royal Oak", "Paddington", "Edgware Road", "Baker Street", "Great Portland Street", "Euston Square", "King's Cross St Pancras", "Farringdon", "Barbican", "Moorgate", "Liverpool Street", "Aldgate East", "Whitechapel", "Stepney Green", "Mile End", "Bow Road", "Bromley-by-Bow", "West Ham", "Plaistow", "Upton Park", "East Ham", "Barking"],
-  "jubilee": ["Stanmore", "Canons Park", "Queensbury", "Kingsbury", "Wembley Park", "Neasden", "Dollis Hill", "Willesden Green", "Kilburn", "West Hampstead", "Finchley Road", "Swiss Cottage", "St John's Wood", "Baker Street", "Bond Street", "Green Park", "Westminster", "Waterloo", "Southwark", "London Bridge", "Bermondsey", "Canada Water", "Canary Wharf", "North Greenwich", "Canning Town", "Stratford"],
-  "metropolitan": ["Aldgate", "Liverpool Street", "Moorgate", "Barbican", "Farringdon", "King's Cross St Pancras", "Euston Square", "Great Portland Street", "Baker Street", "Finchley Road", "Wembley Park", "Preston Road", "Harrow-on-the-Hill", "North Harrow", "Pinner", "Northwood Hills", "Northwood", "Moor Park", "Rickmansworth", "Chorleywood", "Chalfont & Latimer", "Amersham", "Chesham", "Watford", "West Harrow", "Rayners Lane", "Eastcote", "Ruislip Manor", "Ruislip", "Ickenham", "Hillingdon", "Uxbridge"],
-  "northern": ["High Barnet", "Totteridge & Whetstone", "Woodside Park", "West Finchley", "Mill Hill East", "Finchley Central", "East Finchley", "Highgate", "Archway", "Tufnell Park", "Kentish Town", "Edgware", "Burnt Oak", "ColTo achieve this, you need to extend your app in two key ways:
-
-1. **Define Line Station Sequences (Ordered Arrays):** TfL's text descriptions usually say something like *"No service between **Gospel Oak** and **Clapham Junction**"*. To infer the stations in between, you must store the ordered list of stations for each line.
-2. **Parse "Between X and Y" Phrases:** Use a Regular Expression to detect phrases matching patterns like `between [Station A] and [Station B]` in TfL's disruption text, find those two stations in the line's sequence array, and mark all intermediate stations as affected.
-
-Here is the updated, complete, self-contained HTML file. It includes line station maps, a visual line renderer option (with an **"Include visual route diagram"** checkbox), and robust segment parsing.
-
-```html
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#111111">
-  <title>TfL Status Simplified</title>
-  <style>
-    :root {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: #111;
-      background: #f2f2f2;
-    }
-    * { box-sizing: border-box; }
-    body { margin: 0; background: #f2f2f2; }
-    header {
-      background: #111;
-      color: white;
-      padding: calc(18px + env(safe-area-inset-top)) 18px 18px;
-    }
-    header h1 { margin: 0; font-size: 22px; }
-    header p { margin: 5px 0 0; color: #d0d0d0; font-size: 14px; }
-    main { max-width: 760px; margin: auto; padding: 16px; }
-    .toolbar {
-      display: flex; justify-content: space-between; align-items: center;
       gap: 10px; margin-bottom: 14px; flex-wrap: wrap;
     }
     .controls { display: flex; align-items: center; gap: 12px; }
-    .toggle-label { font-size: 14px; font-weight: 600; cursor: pointer; user-select: none; }
+    .toggle-label { font-size: 13px; font-weight: 600; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 6px; }
     #updated { color: #666; font-size: 13px; }
     button {
       border: 0; border-radius: 9px; padding: 9px 13px;
@@ -175,22 +51,20 @@ Here is the updated, complete, self-contained HTML file. It includes line statio
     .bad .status { color: #c62828; }
     .warning .status { color: #a66200; }
     .details { padding: 0 15px 15px; border-top: 1px solid #eee; }
-    .affected { margin: 14px 0 8px; font-weight: 800; }
+    .affected { margin: 14px 0 8px; font-weight: 800; font-size: 14px; }
     
-    /* Visual Line Diagram Styles */
+    /* Visual Line Route Diagram */
     .line-diagram {
       display: flex;
       flex-direction: column;
-      gap: 0;
-      margin: 15px 0;
-      padding-left: 10px;
+      margin: 14px 0 10px 8px;
     }
     .diagram-node {
       display: flex;
       align-items: center;
       gap: 12px;
       position: relative;
-      padding: 6px 0;
+      padding: 5px 0;
     }
     .diagram-node::before {
       content: '';
@@ -199,38 +73,36 @@ Here is the updated, complete, self-contained HTML file. It includes line statio
       top: 0;
       bottom: 0;
       width: 4px;
-      background: #ccc;
+      background: #ddd;
       z-index: 1;
     }
     .diagram-node:first-child::before { top: 50%; }
     .diagram-node:last-child::before { bottom: 50%; }
-    .diagram-node.affected-segment::before { background: #c62828; }
+    .diagram-node.segment-affected::before { background: #c62828; }
     
     .dot {
       width: 18px;
       height: 18px;
       border-radius: 50%;
       background: white;
-      border: 4px solid #888;
+      border: 4px solid #aaa;
       z-index: 2;
-      box-sizing: border-box;
       flex-shrink: 0;
     }
-    .diagram-node.affected .dot {
+    .diagram-node.node-affected .dot {
       background: #c62828;
       border-color: #c62828;
     }
     .node-name {
       font-size: 13px;
-      font-weight: 600;
-      color: #444;
+      color: #666;
     }
-    .diagram-node.affected .node-name {
+    .diagram-node.node-affected .node-name {
       color: #c62828;
       font-weight: 800;
     }
 
-    /* Standard station pill layout */
+    /* Standard station tags layout */
     .stations { display: flex; flex-wrap: wrap; gap: 6px; }
     .station {
       background: #eee; border-radius: 999px; padding: 6px 9px;
@@ -244,10 +116,10 @@ Here is the updated, complete, self-contained HTML file. It includes line statio
     }
 
     details { margin-top: 13px; }
-    summary { color: #555; cursor: pointer; font-size: 13px; }
+    summary { color: #555; cursor: pointer; font-size: 13px; font-weight: 600; }
     .raw {
       background: #f5f5f5; padding: 10px; margin-top: 8px;
-      font-size: 13px; line-height: 1.4;
+      font-size: 13px; line-height: 1.4; border-radius: 6px;
     }
     .message {
       background: white; padding: 18px; border-radius: 12px;
@@ -265,7 +137,7 @@ Here is the updated, complete, self-contained HTML file. It includes line statio
     <div class="controls">
       <button class="refresh" id="refresh">Refresh</button>
       <label class="toggle-label">
-        <input type="checkbox" id="show-diagram" checked> Show Visual Line Map
+        <input type="checkbox" id="show-diagram" checked> Visual line route
       </label>
     </div>
     <div id="updated">Loading…</div>
@@ -274,19 +146,18 @@ Here is the updated, complete, self-contained HTML file. It includes line statio
 </main>
 
 <script>
-const API = "[https://api.tfl.gov.uk/Line/Mode/tube,dlr,elizabeth-line,overground/Status?detail=true](https://api.tfl.gov.uk/Line/Mode/tube,dlr,elizabeth-line,overground/Status?detail=true)";
+const API = "https://api.tfl.gov.uk/Line/Mode/tube,dlr,elizabeth-line,overground/Status?detail=true";
 
-// Known ordered routes (expandable for full network topology)
-const lineRoutes = {
+// Ordered station sequences per line ID to infer intermediate affected stations
+const LINE_ROUTES = {
   "london-overground": [
-    "Gospel Oak", "Upper Holloway", "Crouch Hill", "Harringay Green Lanes",
-    "Tottenham Hale", "Blackhorse Road", "Walthamstow Queen's Road", "Leyton Midland Road",
+    "Richmond", "Kew Gardens", "Gunnersbury", "South Acton", "Acton Central", 
+    "Willesden Junction", "Kensal Rise", "Brondesbury Park", "Brondesbury", 
+    "West Hampstead", "Finchley Road & Frognal", "Hampstead Heath", "Gospel Oak", 
+    "Upper Holloway", "Crouch Hill", "Harringay Green Lanes", "Tottenham Hale", 
+    "Blackhorse Road", "Walthamstow Queen's Road", "Leyton Midland Road", 
     "Leytonstone High Road", "Wanstead Park", "Woodgrange Park", "Barking", "Barking Riverside",
-    "Richmond", "Kew Gardens", "Gunnersbury", "South Acton", "Acton Central", "Willisden Junction",
-    "Kensal Rise", "Brondesbury Park", "Brondesbury", "West Hampstead", "Finchley Road & Frognal",
-    "Hampstead Heath", "Gospel Oak", "Kentish Town West", "Camden Road", "Caledonian Road & Barnsbury",
-    "Highbury & Islington", "Canonbury", "Dalston Kingsland", "Hackney Central", "Homerton", "Hackney Wick",
-    "Stratford", "Clapham Junction"
+    "Clapham Junction"
   ],
   "victoria": [
     "Brixton", "Stockwell", "Vauxhall", "Pimlico", "Victoria", "Green Park", 
@@ -310,6 +181,29 @@ const lineRoutes = {
     "Stratford", "Leyton", "Leytonstone", "Wanstead", "Redbridge", "Gants Hill", 
     "Newbury Park", "Barkingside", "Fairlop", "Hainault", "Grange Hill", "Chigwell", 
     "Roding Valley", "Snaresbrook", "South Woodford", "Woodford", "Buckhurst Hill", "Loughton", "Debden", "Theydon Bois", "Epping"
+  ],
+  "jubilee": [
+    "Stanmore", "Canons Park", "Queensbury", "Kingsbury", "Wembley Park", "Neasden", 
+    "Dollis Hill", "Willesden Green", "Kilburn", "West Hampstead", "Finchley Road", 
+    "Swiss Cottage", "St John's Wood", "Baker Street", "Bond Street", "Green Park", 
+    "Westminster", "Waterloo", "Southwark", "London Bridge", "Bermondsey", 
+    "Canada Water", "Canary Wharf", "North Greenwich", "Canning Town", "Stratford"
+  ],
+  "northern": [
+    "Edgware", "Burnt Oak", "Colindale", "Hendon Central", "Brent Cross", "Golders Green",
+    "Hampstead", "Belsize Park", "Chalk Farm", "Camden Town", "Euston", "King's Cross St Pancras",
+    "Angel", "Old Street", "Moorgate", "Bank", "London Bridge", "Borough", "Elephant & Castle",
+    "Kennington", "Oval", "Stockwell", "Clapham North", "Clapham Common", "Clapham South",
+    "Balham", "Tooting Bec", "Tooting Broadway", "Colliers Wood", "South Wimbledon", "Morden"
+  ],
+  "piccadilly": [
+    "Uxbridge", "Hillingdon", "Ickenham", "Ruislip", "Ruislip Manor", "Eastcote", "Rayners Lane",
+    "South Harrow", "Sudbury Hill", "Sudbury Town", "Alperton", "Park Royal", "North Ealing",
+    "Ealing Common", "Acton Town", "Turnham Green", "Hammersmith", "Barons Court", "Earl's Court",
+    "South Kensington", "Knightsbridge", "Hyde Park Corner", "Green Park", "Piccadilly Circus",
+    "Leicester Square", "Covent Garden", "Holborn", "Russell Square", "King's Cross St Pancras",
+    "Caledonian Road", "Holloway Road", "Arsenal", "Finsbury Park", "Manor House", "Turnpike Lane",
+    "Wood Green", "Bounds Green", "Arnos Grove", "Southgate", "Oakwood", "Cockfosters"
   ]
 };
 
@@ -332,15 +226,14 @@ function classify(status) {
   return { cls: "bad", text };
 }
 
-// Function to find affected range in ordering
-function processLineRoute(lineId, description) {
-  const route = lineRoutes[lineId];
-  if (!route || !description) return { route: route || [], affectedIndices: new Set() };
-
+function getAffectedIndices(lineId, description) {
+  const route = LINE_ROUTES[lineId] || [];
   const affectedIndices = new Set();
+  if (!description) return { route, affectedIndices };
+
   const lowerDesc = description.toLowerCase();
 
-  // Pattern: "between [Station A] and [Station B]"
+  // Look for pattern "between [Station A] and [Station B]"
   const betweenRegex = /between\s+([a-z0-9\s&'-]+?)\s+and\s+([a-z0-9\s&'-]+?)(?=\s+due|\s+while|\s+and|\.|$)/gi;
   let match;
 
@@ -348,20 +241,19 @@ function processLineRoute(lineId, description) {
     const rawStart = match[1].trim();
     const rawEnd = match[2].trim();
 
-    // Match extracted station string to actual line order
     const idxA = route.findIndex(s => rawStart.includes(s.toLowerCase()) || s.toLowerCase().includes(rawStart));
     const idxB = route.findIndex(s => rawEnd.includes(s.toLowerCase()) || s.toLowerCase().includes(rawEnd));
 
     if (idxA !== -1 && idxB !== -1) {
-      const min = Math.min(idxA, idxB);
-      const max = Math.max(idxA, idxB);
-      for (let i = min; i <= max; i++) {
+      const start = Math.min(idxA, idxB);
+      const end = Math.max(idxA, idxB);
+      for (let i = start; i <= end; i++) {
         affectedIndices.add(i);
       }
     }
   }
 
-  // Fallback: If no ranges matched, check individual stations mentioned
+  // Fallback: If no ranges matched, mark any single station explicitly named in the description
   if (affectedIndices.size === 0) {
     route.forEach((station, idx) => {
       if (lowerDesc.includes(station.toLowerCase())) {
@@ -378,9 +270,9 @@ function buildDiagramHtml(route, affectedIndices) {
     route.map((station, i) => {
       const isAffected = affectedIndices.has(i);
       const isNextAffected = affectedIndices.has(i + 1);
-      const segmentClass = (isAffected && isNextAffected) ? 'affected-segment' : '';
+      const segmentClass = (isAffected && isNextAffected) ? 'segment-affected' : '';
       return `
-        <div class="diagram-node ${isAffected ? 'affected' : ''} ${segmentClass}">
+        <div class="diagram-node ${isAffected ? 'node-affected' : ''} ${segmentClass}">
           <div class="dot"></div>
           <div class="node-name">${escapeHtml(station)}</div>
         </div>
@@ -395,7 +287,7 @@ function card(line, showVisualMap) {
 
   const info = classify(status);
   const description = getDescription(status);
-  const { route, affectedIndices } = processLineRoute(line.id, description);
+  const { route, affectedIndices } = getAffectedIndices(line.id, description);
 
   if (info.cls === "good") {
     return `<article class="card good">
@@ -406,18 +298,17 @@ function card(line, showVisualMap) {
     </article>`;
   }
 
-  let routeVisualization = "";
+  let visualizationHtml = "";
   if (showVisualMap && route.length > 0) {
-    routeVisualization = buildDiagramHtml(route, affectedIndices);
+    visualizationHtml = buildDiagramHtml(route, affectedIndices);
   } else {
-    // Basic Pill view fallback
-    const stationHtml = Array.from(affectedIndices).map(idx => 
+    const stationPills = Array.from(affectedIndices).map(idx => 
       `<span class="station affected-pill">${escapeHtml(route[idx])}</span>`
     ).join("");
 
-    routeVisualization = `
+    visualizationHtml = `
       <div class="affected">Affected Stations:</div>
-      <div class="stations">${stationHtml || "<span>No specific stations could be mapped.</span>"}</div>
+      <div class="stations">${stationPills || "<span>No specific mapped stations identified.</span>"}</div>
     `;
   }
 
@@ -427,7 +318,7 @@ function card(line, showVisualMap) {
       <div class="status">${escapeHtml(info.text)}</div>
     </div>
     <div class="details">
-      ${routeVisualization}
+      ${visualizationHtml}
       ${description ? `
         <details>
           <summary>Show TfL's original description</summary>
@@ -475,11 +366,3 @@ setInterval(loadStatus, 60_000);
 </script>
 </body>
 </html>
-Key Changes Made:
-Route Sequence Mapping (lineRoutes): Defines the ordered station sequences per line ID (e.g., Victoria, Bakerloo, Central, Overground).
-
-Regex Segment Parsing (processLineRoute): Uses regular expressions to target strings like between [X] and [Y]. It locates Station X and Station Y in the route array and flags every intermediate station as affected.
-
-Visual Line Diagram Renderer (buildDiagramHtml): Generates vertical line diagrams showing red nodes/connections for affected segments and grey nodes for non-affected segments.
-
-Interactive Option: Adds a checkbox switch ("Show Visual Line Map") near the refresh button so users can toggle between the graphic route map view and standard station pills.
