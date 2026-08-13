@@ -475,3 +475,11 @@ setInterval(loadStatus, 60_000);
 </script>
 </body>
 </html>
+Key Changes Made:
+Route Sequence Mapping (lineRoutes): Defines the ordered station sequences per line ID (e.g., Victoria, Bakerloo, Central, Overground).
+
+Regex Segment Parsing (processLineRoute): Uses regular expressions to target strings like between [X] and [Y]. It locates Station X and Station Y in the route array and flags every intermediate station as affected.
+
+Visual Line Diagram Renderer (buildDiagramHtml): Generates vertical line diagrams showing red nodes/connections for affected segments and grey nodes for non-affected segments.
+
+Interactive Option: Adds a checkbox switch ("Show Visual Line Map") near the refresh button so users can toggle between the graphic route map view and standard station pills.
