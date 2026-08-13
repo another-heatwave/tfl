@@ -67,7 +67,7 @@
 
     main { max-width: 760px; margin: auto; padding: 16px; }
     
-    /* Toolbar & Search Controls */
+    /* Toolbar Controls */
     .toolbar {
       display: flex;
       flex-direction: column;
@@ -93,16 +93,28 @@
     }
     .search-input:focus { border-color: #111; }
 
-    .controls { display: flex; align-items: center; gap: 12px; }
+    .controls { display: flex; align-items: center; gap: 10px; }
     .toggle-fav {
       font-size: 13px; font-weight: 600; cursor: pointer; user-select: none;
       display: flex; align-items: center; gap: 6px;
     }
     #updated { color: #666; font-size: 13px; }
-    button.refresh {
-      border: 0; border-radius: 9px; padding: 8px 12px;
+    
+    /* Prominent Refresh Button */
+    button.btn-refresh {
+      border: 0; border-radius: 8px; padding: 8px 14px;
       font-weight: 700; cursor: pointer; background: #111; color: white;
-      font-size: 13px;
+      font-size: 13px; display: inline-flex; align-items: center; gap: 6px;
+      transition: background 0.2s ease;
+    }
+    button.btn-refresh:hover { background: #333; }
+    button.btn-refresh:active { transform: scale(0.97); }
+
+    /* Back Button for Dedicated Line Page */
+    button.btn-back {
+      border: 1px solid #ccc; border-radius: 8px; padding: 8px 14px;
+      font-weight: 700; cursor: pointer; background: #fff; color: #111;
+      font-size: 13px; margin-bottom: 14px; display: inline-flex; align-items: center; gap: 6px;
     }
 
     /* Line Cards */
@@ -141,7 +153,7 @@
     
     .details { padding: 0 15px 15px; border-top: 1px solid #f0f0f0; }
 
-    /* Key Summary Segment Highlight */
+    /* Segment Summary Banner */
     .segment-summary {
       background: #fdf3f2;
       border-left: 3px solid #c62828;
@@ -153,16 +165,18 @@
       margin-top: 12px;
     }
 
-    /* Planned Works Styling */
+    /* Planned Works Date Badge */
     .date-badge {
       display: inline-block;
       background: #fff3e0; color: #e65100; border: 1px solid #ffe0b2;
       font-weight: 700; font-size: 12px; padding: 4px 10px;
       border-radius: 6px; margin-top: 12px; margin-bottom: 8px;
     }
-    .planned-desc { font-size: 14px; line-height: 1.4; color: #333; }
+    .planned-title {
+      font-size: 15px; font-weight: 800; color: #111; margin-top: 8px;
+    }
 
-    /* Collapsible Map Details */
+    /* Collapsible Details */
     details.map-details { margin-top: 12px; }
     details.map-details summary {
       color: #111; font-weight: 700; font-size: 13px;
@@ -173,7 +187,6 @@
     .line-diagram { display: flex; flex-direction: column; margin: 14px 0 10px 8px; }
     .diagram-node { display: flex; align-items: center; gap: 12px; position: relative; padding: 6px 0; }
     
-    /* Line track connecting stations */
     .diagram-node::before {
       content: ''; position: absolute; left: 7px; top: 0; bottom: 0;
       width: 4px; background: var(--line-color, var(--color-default)); opacity: 0.3; z-index: 1;
@@ -181,19 +194,14 @@
     .diagram-node:first-child::before { top: 50%; }
     .diagram-node:last-child::before { bottom: 50%; }
     
-    /* Affected segment track */
     .diagram-node.segment-affected::before {
       background: #c62828; opacity: 1; width: 6px; left: 6px;
     }
     
-    /* Station node dot styling */
     .dot {
       width: 18px; height: 18px; border-radius: 50%; background: white;
       border: 4px solid var(--line-color, var(--color-default)); z-index: 2; flex-shrink: 0;
-      transition: all 0.2s ease;
     }
-    
-    /* Station node dot - Affected styling */
     .diagram-node.node-affected .dot {
       background: #c62828; border-color: #c62828; transform: scale(1.1);
     }
@@ -216,11 +224,12 @@
       display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;
     }
     .network-card {
-      border: 2px solid #eee; border-radius: 10px; padding: 12px;
+      border: 2px solid #eee; border-radius: 10px; padding: 14px;
       cursor: pointer; transition: all 0.2s ease;
       border-left: 6px solid var(--line-color, var(--color-default));
+      background: #fff;
     }
-    .network-card:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.06); }
+    .network-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: #ddd; }
     .network-card.has-disruption { border-color: #ffcdd2; background: #fffcfc; }
     .network-card .line-header { justify-content: space-between; width: 100%; }
 
@@ -247,7 +256,7 @@
     <input type="text" id="search-bar" class="search-input" placeholder="Search line or station (e.g., Victoria, Oxford Circus)...">
     <div class="toolbar-row">
       <div class="controls">
-        <button class="refresh" id="refresh">Refresh</button>
+        <button class="btn-refresh" id="btn-refresh">🔄 Refresh Status</button>
         <label class="toggle-fav" id="fav-toggle-label">
           <input type="checkbox" id="filter-favs"> ⭐ Favorites only
         </label>
@@ -255,7 +264,7 @@
       <div id="updated">Loading…</div>
     </div>
   </div>
-  <div id="results"><div class="message">Loading TfL status…</div></div>
+  <div id="results"><div class="message">Loading status…</div></div>
 </main>
 
 <script>
@@ -263,10 +272,12 @@ const API_LIVE = "https://api.tfl.gov.uk/Line/Mode/tube,dlr,elizabeth-line,overg
 const API_PLANNED = "https://api.tfl.gov.uk/Line/Mode/tube,dlr,elizabeth-line,overground/Disruption";
 
 let currentTab = "live";
+let selectedLineDetailId = null;
 let lastUpdatedTime = null;
+let cachedLiveMapData = [];
 let favoriteLines = new Set(JSON.parse(localStorage.getItem("tfl_fav_lines") || "[]"));
 
-// TfL Official Color CSS Variable & Text Contrast Mapper
+// TfL Corporate Colors & Text Contrast Mapping
 const LINE_COLORS = {
   "bakerloo": { var: "var(--color-bakerloo)", text: "#fff" },
   "central": { var: "var(--color-central)", text: "#fff" },
@@ -285,7 +296,7 @@ const LINE_COLORS = {
   "tram": { var: "var(--color-tram)", text: "#111" }
 };
 
-// Complete ordered station lists for exact station-between-station range inference
+// Line route station maps
 const LINE_ROUTES = {
   "london-overground": [
     "Richmond", "Kew Gardens", "Gunnersbury", "South Acton", "Acton Central", 
@@ -376,7 +387,6 @@ function classify(status) {
   return { cls: "bad", text };
 }
 
-// INFER ALL INTERMEDIATE STATIONS BETWEEN TWO POINTS NAMED IN DISRUPTION
 function getAffectedIndices(lineId, description) {
   const route = LINE_ROUTES[lineId] || [];
   const affectedIndices = new Set();
@@ -384,8 +394,6 @@ function getAffectedIndices(lineId, description) {
   if (!description) return { route, affectedIndices, segmentSummary };
 
   const lowerDesc = description.toLowerCase();
-  
-  // Regex parsing phrases like "between [Station A] and [Station B]"
   const betweenRegex = /between\s+([a-z0-9\s&'-]+?)\s+and\s+([a-z0-9\s&'-]+?)(?=\s+due|\s+while|\s+and|\.|$)/gi;
   let match;
 
@@ -399,34 +407,25 @@ function getAffectedIndices(lineId, description) {
     if (idxA !== -1 && idxB !== -1) {
       const start = Math.min(idxA, idxB);
       const end = Math.max(idxA, idxB);
-      
-      // INFER ALL STATIONS BETWEEN START AND END
-      for (let i = start; i <= end; i++) {
-        affectedIndices.add(i);
-      }
+      for (let i = start; i <= end; i++) affectedIndices.add(i);
       segmentSummary = `Closed between ${route[start]} and ${route[end]}`;
     }
   }
 
-  // Fallback: If regex didn't catch range boundaries, match individually named stations
   if (affectedIndices.size === 0) {
     route.forEach((station, idx) => {
-      if (lowerDesc.includes(station.toLowerCase())) {
-        affectedIndices.add(idx);
-      }
+      if (lowerDesc.includes(station.toLowerCase())) affectedIndices.add(idx);
     });
   }
 
   return { route, affectedIndices, segmentSummary };
 }
 
-// BUILD VISUAL ROUTE MAP WITH FULL INTERMEDIATE HIGHLIGHTING
 function buildDiagramHtml(route, affectedIndices) {
   return `<div class="line-diagram">` + 
     route.map((station, i) => {
       const isAffected = affectedIndices.has(i);
       const isNextAffected = affectedIndices.has(i + 1);
-      // Highlight connecting segment track if both current and next station are in affected set
       const segmentClass = (isAffected && isNextAffected) ? 'segment-affected' : '';
       return `
         <div class="diagram-node ${isAffected ? 'node-affected' : ''} ${segmentClass}">
@@ -438,7 +437,7 @@ function buildDiagramHtml(route, affectedIndices) {
   `</div>`;
 }
 
-function cardLive(line, defaultOpenMap = false) {
+function cardLive(line, forceOpenMap = false) {
   const status = line.lineStatuses?.[0];
   if (!status) return "";
 
@@ -448,7 +447,7 @@ function cardLive(line, defaultOpenMap = false) {
   const styleConf = LINE_COLORS[line.id] || { var: "var(--color-default)", text: "#fff" };
   const isFav = favoriteLines.has(line.id);
 
-  if (info.cls === "good") {
+  if (info.cls === "good" && !forceOpenMap) {
     return `<article class="card good" style="--line-color: ${styleConf.var}; --badge-text: ${styleConf.text};">
       <div class="top">
         <div class="line-header">
@@ -467,8 +466,8 @@ function cardLive(line, defaultOpenMap = false) {
   let routeVisualization = "";
   if (route.length > 0) {
     routeVisualization = `
-      <details class="map-details" ${defaultOpenMap ? 'open' : ''}>
-        <summary>🗺️ Show visual route map (${affectedIndices.size} stations affected)</summary>
+      <details class="map-details" ${forceOpenMap ? 'open' : ''}>
+        <summary>🗺️ ${forceOpenMap ? 'Visual Route Map' : 'Show visual route map'}</summary>
         ${buildDiagramHtml(route, affectedIndices)}
       </details>
     `;
@@ -495,30 +494,83 @@ function cardLive(line, defaultOpenMap = false) {
   </article>`;
 }
 
+// CLEANER, STRUCTURED PLANNED WORKS CARD
 function cardPlanned(item) {
-  const category = item.categoryDescription || "Planned Work";
+  const lineName = item.categoryDescription || "Planned Works";
   const description = item.description || "No detail provided.";
   
   const start = formatDate(item.fromDate);
   const end = formatDate(item.toDate);
   
-  let dateText = "";
+  let dateBadgeText = "";
   if (start && end) {
-    dateText = start === end ? `📅 ${start}` : `📅 ${start} — ${end}`;
+    dateBadgeText = start === end ? `📅 ${start}` : `📅 ${start} — ${end}`;
   } else if (start) {
-    dateText = `📅 From ${start}`;
+    dateBadgeText = `📅 From ${start}`;
   }
+
+  // Find range boundaries using regex
+  const betweenMatch = /between\s+([a-z0-9\s&'-]+?)\s+and\s+([a-z0-9\s&'-]+?)(?=\s+due|\s+while|\s+and|\.|$)/gi.exec(description);
+  
+  let structuredHeadline = `Planned closure on ${lineName}`;
+  if (betweenMatch) {
+    structuredHeadline = `Planned works on ${lineName} between ${betweenMatch[1].trim()} and ${betweenMatch[2].trim()}`;
+  }
+
+  // Extract station list tags
+  const matchedStations = [];
+  Object.values(LINE_ROUTES).flat().forEach(st => {
+    if (description.toLowerCase().includes(st.toLowerCase()) && !matchedStations.includes(st)) {
+      matchedStations.push(st);
+    }
+  });
+
+  const stationPills = matchedStations.map(st => `<span class="station affected-pill">${escapeHtml(st)}</span>`).join("");
 
   return `<article class="card warning">
     <div class="top">
-      <div class="line-name" style="font-weight: 800; font-size: 16px;">${escapeHtml(category)}</div>
-      <div class="status">Planned Work</div>
+      <div class="planned-title">⚠️ ${escapeHtml(structuredHeadline)}</div>
     </div>
     <div class="details">
-      ${dateText ? `<div class="date-badge">${escapeHtml(dateText)}</div>` : ""}
-      <div class="planned-desc">${escapeHtml(description)}</div>
+      ${dateBadgeText ? `<div class="date-badge">${escapeHtml(dateBadgeText)}</div>` : ""}
+      
+      ${matchedStations.length > 0 ? `
+        <details class="map-details">
+          <summary>📍 View affected stations (${matchedStations.length})</summary>
+          <div class="stations" style="margin-top: 10px;">${stationPills}</div>
+        </details>
+      ` : ''}
+
+      <details class="raw-details">
+        <summary>More details & description</summary>
+        <div class="raw">${escapeHtml(description)}</div>
+      </details>
     </div>
   </article>`;
+}
+
+// DEDICATED INDIVIDUAL LINE VIEW
+function openLineDetailView(lineId) {
+  selectedLineDetailId = lineId;
+  const lineData = cachedLiveMapData.find(l => l.id === lineId);
+  const results = document.getElementById("results");
+  document.getElementById("toolbar").style.display = "none";
+
+  if (!lineData) {
+    results.innerHTML = `<button class="btn-back" onclick="closeLineDetailView()">← Back to Network Map</button><div class="message">Line details not found.</div>`;
+    return;
+  }
+
+  results.innerHTML = `
+    <button class="btn-back" onclick="closeLineDetailView()">← Back to Network Map</button>
+    ${cardLive(lineData, true)}
+  `;
+}
+
+function closeLineDetailView() {
+  selectedLineDetailId = null;
+  document.getElementById("toolbar").style.display = "flex";
+  loadStatus();
 }
 
 function renderNetworkMap(data) {
@@ -533,12 +585,12 @@ function renderNetworkMap(data) {
     const hasDisruption = info.cls !== "good";
 
     return `
-      <div class="network-card ${hasDisruption ? 'has-disruption' : ''}" style="--line-color: ${styleConf.var}">
+      <div class="network-card ${hasDisruption ? 'has-disruption' : ''}" style="--line-color: ${styleConf.var}" onclick="openLineDetailView('${line.id}')">
         <div class="line-header" style="margin-bottom: 8px;">
           <span class="line-badge">${escapeHtml(line.name)}</span>
           <span class="status ${info.cls}" style="font-size: 13px;">${escapeHtml(info.text)}</span>
         </div>
-        ${hasDisruption ? `<div style="font-size: 12px; color: #c62828; font-weight: 700;">⚠️ ${affectedIndices.size} stations affected</div>` : `<div style="font-size: 12px; color: #148a36;">✓ All stations open</div>`}
+        ${hasDisruption ? `<div style="font-size: 12px; color: #c62828; font-weight: 700;">⚠️ ${affectedIndices.size} stations affected →</div>` : `<div style="font-size: 12px; color: #148a36;">✓ All stations open →</div>`}
       </div>
     `;
   }).join('');
@@ -546,6 +598,7 @@ function renderNetworkMap(data) {
   results.innerHTML = `
     <div class="network-container">
       <div class="network-title">Interactive TfL Network Overview</div>
+      <p style="font-size: 13px; color: #666; margin-top: -6px; margin-bottom: 14px;">Tap any line below to view its full individual route map.</p>
       <div class="network-grid">${cardsHtml}</div>
     </div>
   `;
@@ -567,17 +620,20 @@ function updateRelativeTime() {
 }
 
 async function loadStatus() {
+  if (selectedLineDetailId) return;
+
   const results = document.getElementById("results");
   const searchQuery = document.getElementById("search-bar").value.toLowerCase().trim();
   const filterFavs = document.getElementById("filter-favs").checked;
 
-  results.innerHTML = `<div class="message">Loading network information…</div>`;
+  results.innerHTML = `<div class="message">Loading information…</div>`;
 
   try {
     if (currentTab === "live" || currentTab === "map") {
       const response = await fetch(API_LIVE);
       if (!response.ok) throw new Error("HTTP " + response.status);
       let data = await response.json();
+      cachedLiveMapData = data;
 
       if (currentTab === "map") {
         renderNetworkMap(data);
@@ -643,9 +699,10 @@ async function loadStatus() {
   }
 }
 
-// Tab Switching Mechanics
+// Navigation Events
 document.getElementById("tab-live").addEventListener("click", (e) => {
   currentTab = "live";
+  selectedLineDetailId = null;
   setActiveTab(e.target);
   document.getElementById("toolbar").style.display = "flex";
   loadStatus();
@@ -653,6 +710,7 @@ document.getElementById("tab-live").addEventListener("click", (e) => {
 
 document.getElementById("tab-map").addEventListener("click", (e) => {
   currentTab = "map";
+  selectedLineDetailId = null;
   setActiveTab(e.target);
   document.getElementById("toolbar").style.display = "flex";
   loadStatus();
@@ -660,6 +718,7 @@ document.getElementById("tab-map").addEventListener("click", (e) => {
 
 document.getElementById("tab-planned").addEventListener("click", (e) => {
   currentTab = "planned";
+  selectedLineDetailId = null;
   setActiveTab(e.target);
   document.getElementById("toolbar").style.display = "flex";
   loadStatus();
@@ -670,7 +729,15 @@ function setActiveTab(target) {
   target.classList.add('active');
 }
 
-document.getElementById("refresh").addEventListener("click", loadStatus);
+// Manual Refresh Button Event Binding
+document.getElementById("btn-refresh").addEventListener("click", () => {
+  if (selectedLineDetailId) {
+    closeLineDetailView();
+  } else {
+    loadStatus();
+  }
+});
+
 document.getElementById("search-bar").addEventListener("input", loadStatus);
 document.getElementById("filter-favs").addEventListener("change", loadStatus);
 
