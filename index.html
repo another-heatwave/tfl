@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111111">
+  <title>TfL Status Simplified</title>
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #111;
+      background: #f2f2f2;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f2f2f2; }
+    header {
+      background: #111;
+      color: white;
+      padding: calc(18px + env(safe-area-inset-top)) 18px 18px;
+    }
+    header h1 { margin: 0; font-size: 22px; }
+    header p { margin: 5px 0 0; color: #d0d0d0; font-size: 14px; }
+    main { max-width: 760px; margin: auto; padding: 16px; }
+    .toolbar {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 10px; margin-bottom: 14px;
+    }
+    #updated { color: #666; font-size: 13px; }
+    button {
+      border: 0; border-radius: 9px; padding: 9px 13px;
+      font-weight: 700; cursor: pointer;
+    }
+    .refresh { background: #111; color: white; }
+    .card {
+      background: white; border-radius: 12px; margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08); overflow: hidden;
+      border-left: 7px solid #777;
+    }
+    .card.good { border-left-color: #148a36; }
+    .card.bad { border-left-color: #c62828; }
+    .card.warning { border-left-color: #e18b00; }
+    .top {
+      padding: 15px; display: flex; justify-content: space-between;
+      gap: 12px; align-items: center;
+    }
+    .line-name { font-size: 18px; font-weight: 800; }
+    .status { font-size: 14px; font-weight: 800; text-align: right; }
+    .good .status { color: #148a36; }
+    .bad .status { color: #c62828; }
+    .warning .status { color: #a66200; }
+    .details { padding: 0 15px 15px; border-top: 1px solid #eee; }
+    .affected { margin: 14px 0 8px; font-weight: 800; }
+    .stations { display: flex; flex-wrap: wrap; gap: 6px; }
+    .station {
+      background: #eee; border-radius: 999px; padding: 6px 9px;
+      font-size: 13px;
+    }
+    details { margin-top: 13px; }
+    summary { color: #555; cursor: pointer; font-size: 13px; }
+    .raw {
+      background: #f5f5f5; padding: 10px; margin-top: 8px;
+      font-size: 13px; line-height: 1.4;
+    }
+    .message {
+      background: white; padding: 18px; border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>TfL Status Simplified</h1>
+  <p>See which parts of a line are affected, without deciphering TfL's wording.</p>
+</header>
+
+<main>
+  <div class="toolbar">
+    <div id="updated">Loading…</div>
+    <button class="refresh" id="refresh">Refresh</button>
+  </div>
+  <div id="results"><div class="message">Loading TfL status…</div></div>
+</main>
+
+<script>
+const API = "https://api.tfl.gov.uk/Line/Mode/tube,dlr,elizabeth-line,overground/Status?detail=true";
+
+const knownStations = [
+  "Acton Town","Aldgate","Aldgate East","Baker Street","Balham","Bank","Barbican",
+  "Barking","Battersea Power Station","Bayswater","Bethnal Green","Blackfriars",
+  "Bond Street","Borough","Bow Road","Brent Cross","Brixton","Canada Water",
+  "Canary Wharf","Cannon Street","Chancery Lane","Charing Cross","Clapham Common",
+  "Clapham North","Clapham South","Cockfosters","Covent Garden","Ealing Broadway",
+  "Earl's Court","East Ham","Edgware","Edgware Road","Elephant & Castle","Embankment",
+  "Euston","Euston Square","Farringdon","Finchley Central","Finsbury Park",
+  "Fulham Broadway","Gloucester Road","Golders Green","Green Park","Hammersmith",
+  "Hanger Lane","Harrow-on-the-Hill","Hatton Cross","Heathrow Terminals 2 & 3",
+  "Highbury & Islington","Highgate","Holborn","Holland Park","Hornchurch",
+  "Hounslow Central","Hyde Park Corner","Ickenham","Kennington","Kensington",
+  "Kensal Green","Kentish Town","Kew Gardens","Kilburn","King's Cross St Pancras",
+  "Knightsbridge","Lancaster Gate","Leicester Square","Liverpool Street",
+  "London Bridge","Maida Vale","Marble Arch","Mile End","Monument","Moorgate",
+  "Neasden","Newbury Park","North Greenwich","North Harrow","North Acton","Northolt",
+  "Notting Hill Gate","Old Street","Osterley","Oxford Circus","Paddington",
+  "Parsons Green","Perivale","Piccadilly Circus","Plaistow","Preston Road",
+  "Putney Bridge","Queen's Park","Queensway","Redbridge","Regent's Park",
+  "Richmond","Rickmansworth","Ruislip","Ruislip Manor","Russell Square",
+  "Seven Sisters","Shepherd's Bush","Shoreditch High Street","Sloane Square",
+  "South Ealing","South Kensington","Southfields","Southgate","Southwark",
+  "St James's Park","St Paul's","Stanmore","Stepney Green","Stockwell",
+  "Stonebridge Park","Stratford","Sudbury Town","Temple","Tooting Bec",
+  "Tooting Broadway","Tottenham Court Road","Tottenham Hale","Tower Hill",
+  "Turnham Green","Upminster","Upton Park","Uxbridge","Vauxhall","Victoria",
+  "Walthamstow Central","Warren Street","Warwick Avenue","West Brompton",
+  "West Ham","West Kensington","Westbourne Park","Westminster","White City",
+  "Whitechapel","Willesden Green","Wood Green"
+];
+
+function escapeHtml(value) {
+  const div = document.createElement("div");
+  div.textContent = value || "";
+  return div.innerHTML;
+}
+
+function getDescription(status) {
+  return status?.reason || status?.disruption?.description || "";
+}
+
+function extractStations(description) {
+  if (!description) return [];
+  const lower = description.toLowerCase();
+  return knownStations.filter(s => lower.includes(s.toLowerCase()));
+}
+
+function classify(status) {
+  const text = status?.statusSeverityDescription || "Unknown";
+  const lower = text.toLowerCase();
+  if (lower.includes("good")) return { cls: "good", text: "Good service" };
+  if (lower.includes("minor") || lower.includes("part closure"))
+    return { cls: "warning", text };
+  return { cls: "bad", text };
+}
+
+function card(line) {
+  const status = line.lineStatuses?.[0];
+  if (!status) return "";
+
+  const info = classify(status);
+  const description = getDescription(status);
+  const stations = extractStations(description);
+
+  const stationHtml = stations.length
+    ? stations.map(s => `<span class="station">${escapeHtml(s)}</span>`).join("")
+    : `<span>No specific stations supplied by TfL.</span>`;
+
+  if (info.cls === "good") {
+    return `<article class="card good">
+      <div class="top">
+        <div class="line-name">${escapeHtml(line.name)}</div>
+        <div class="status">Good service</div>
+      </div>
+    </article>`;
+  }
+
+  return `<article class="card ${info.cls}">
+    <div class="top">
+      <div class="line-name">${escapeHtml(line.name)}</div>
+      <div class="status">${escapeHtml(info.text)}</div>
+    </div>
+    <div class="details">
+      <div class="affected">Stations mentioned as affected</div>
+      <div class="stations">${stationHtml}</div>
+      ${description ? `
+        <details>
+          <summary>Show TfL's original description</summary>
+          <div class="raw">${escapeHtml(description)}</div>
+        </details>` : ""}
+    </div>
+  </article>`;
+}
+
+async function loadStatus() {
+  const results = document.getElementById("results");
+  const updated = document.getElementById("updated");
+
+  results.innerHTML = `<div class="message">Loading TfL status…</div>`;
+
+  try {
+    const response = await fetch(API);
+    if (!response.ok) throw new Error("HTTP " + response.status);
+    const data = await response.json();
+
+    data.sort((a, b) => {
+      const ag = (a.lineStatuses?.[0]?.statusSeverityDescription || "").toLowerCase().includes("good");
+      const bg = (b.lineStatuses?.[0]?.statusSeverityDescription || "").toLowerCase().includes("good");
+      return Number(ag) - Number(bg);
+    });
+
+    results.innerHTML = data.map(card).join("");
+    updated.textContent = "Last checked " + new Date().toLocaleTimeString();
+  } catch (error) {
+    console.error(error);
+    results.innerHTML = `
+      <div class="message">
+        <strong>Couldn't load TfL status.</strong>
+        <p>Check your internet connection and try again.</p>
+      </div>`;
+    updated.textContent = "Unable to update";
+  }
+}
+
+document.getElementById("refresh").addEventListener("click", loadStatus);
+loadStatus();
+setInterval(loadStatus, 60_000);
+</script>
+</body>
+</html>
