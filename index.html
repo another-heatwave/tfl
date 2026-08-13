@@ -70,7 +70,6 @@
       gap: 10px; margin-bottom: 14px; flex-wrap: wrap;
     }
     .controls { display: flex; align-items: center; gap: 12px; }
-    .toggle-label { font-size: 13px; font-weight: 600; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 6px; }
     #updated { color: #666; font-size: 13px; }
     button.refresh {
       border: 0; border-radius: 9px; padding: 9px 13px;
@@ -91,13 +90,37 @@
     .bad .status { color: #c62828; }
     .warning .status { color: #a66200; }
     .details { padding: 0 15px 15px; border-top: 1px solid #eee; }
-    .affected { margin: 14px 0 8px; font-weight: 800; font-size: 14px; }
     
     /* Planned Works Styling */
+    .date-badge {
+      display: inline-block;
+      background: #fff3e0;
+      color: #e65100;
+      border: 1px solid #ffe0b2;
+      font-weight: 700;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-top: 12px;
+      margin-bottom: 8px;
+    }
     .planned-desc {
       font-size: 14px;
       line-height: 1.4;
       color: #333;
+    }
+
+    /* Collapsible Map Details */
+    details.map-details {
+      margin-top: 12px;
+    }
+    details.map-details summary {
+      color: #111;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      user-select: none;
+      padding: 4px 0;
     }
 
     /* Visual Line Route Diagram */
@@ -126,14 +149,14 @@
     .diagram-node.node-affected .node-name { color: #c62828; font-weight: 800; }
 
     /* Standard station tags layout */
-    .stations { display: flex; flex-wrap: wrap; gap: 6px; }
+    .stations { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
     .station { background: #eee; border-radius: 999px; padding: 6px 9px; font-size: 13px; }
     .station.affected-pill {
       background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; font-weight: 700;
     }
 
-    details { margin-top: 13px; }
-    summary { color: #555; cursor: pointer; font-size: 13px; font-weight: 600; }
+    details.raw-details { margin-top: 10px; }
+    details.raw-details summary { color: #555; font-size: 13px; font-weight: 600; }
     .raw {
       background: #f5f5f5; padding: 10px; margin-top: 8px;
       font-size: 13px; line-height: 1.4; border-radius: 6px;
@@ -156,9 +179,6 @@
   <div class="toolbar">
     <div class="controls">
       <button class="refresh" id="refresh">Refresh</button>
-      <label class="toggle-label" id="diagram-toggle-label">
-        <input type="checkbox" id="show-diagram" checked> Visual line route
-      </label>
     </div>
     <div id="updated">Loading…</div>
   </div>
@@ -255,6 +275,18 @@ function escapeHtml(value) {
   return div.innerHTML;
 }
 
+function formatDate(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (isNaN(d)) return null;
+  return d.toLocaleDateString('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
+}
+
 function classify(status) {
   const text = status?.statusSeverityDescription || "Unknown";
   const lower = text.toLowerCase();
@@ -312,7 +344,7 @@ function buildDiagramHtml(route, affectedIndices) {
   `</div>`;
 }
 
-function cardLive(line, showVisualMap) {
+function cardLive(line) {
   const status = line.lineStatuses?.[0];
   if (!status) return "";
 
@@ -330,17 +362,17 @@ function cardLive(line, showVisualMap) {
     </article>`;
   }
 
-  let visualizationHtml = "";
-  if (showVisualMap && route.length > 0) {
-    visualizationHtml = buildDiagramHtml(route, affectedIndices);
-  } else {
-    const stationPills = Array.from(affectedIndices).map(idx => 
-      `<span class="station affected-pill">${escapeHtml(route[idx])}</span>`
-    ).join("");
+  const stationPills = Array.from(affectedIndices).map(idx => 
+    `<span class="station affected-pill">${escapeHtml(route[idx])}</span>`
+  ).join("");
 
-    visualizationHtml = `
-      <div class="affected">Affected Stations:</div>
-      <div class="stations">${stationPills || "<span>No specific mapped stations identified.</span>"}</div>
+  let routeVisualization = "";
+  if (route.length > 0) {
+    routeVisualization = `
+      <details class="map-details">
+        <summary>🗺️ Show visual route map</summary>
+        ${buildDiagramHtml(route, affectedIndices)}
+      </details>
     `;
   }
 
@@ -350,9 +382,10 @@ function cardLive(line, showVisualMap) {
       <div class="status">${escapeHtml(info.text)}</div>
     </div>
     <div class="details">
-      ${visualizationHtml}
+      ${stationPills ? `<div class="stations">${stationPills}</div>` : ""}
+      ${routeVisualization}
       ${description ? `
-        <details>
+        <details class="raw-details">
           <summary>Show TfL's original description</summary>
           <div class="raw">${escapeHtml(description)}</div>
         </details>` : ""}
@@ -361,15 +394,28 @@ function cardLive(line, showVisualMap) {
 }
 
 function cardPlanned(item) {
-  const lineName = item.categoryDescription || "Planned Work";
+  const category = item.categoryDescription || "Planned Work";
   const description = item.description || "No detail provided.";
   
+  const start = formatDate(item.fromDate);
+  const end = formatDate(item.toDate);
+  
+  let dateText = "";
+  if (start && end) {
+    dateText = start === end ? `📅 ${start}` : `📅 ${start} — ${end}`;
+  } else if (start) {
+    dateText = `📅 From ${start}`;
+  } else if (end) {
+    dateText = `📅 Until ${end}`;
+  }
+
   return `<article class="card warning">
     <div class="top">
-      <div class="line-name">${escapeHtml(lineName)}</div>
-      <div class="status">Planned Disruption</div>
+      <div class="line-name">${escapeHtml(category)}</div>
+      <div class="status">Planned Work</div>
     </div>
-    <div class="details" style="padding-top: 15px;">
+    <div class="details">
+      ${dateText ? `<div class="date-badge">${escapeHtml(dateText)}</div>` : ""}
       <div class="planned-desc">${escapeHtml(description)}</div>
     </div>
   </article>`;
@@ -378,7 +424,6 @@ function cardPlanned(item) {
 async function loadStatus() {
   const results = document.getElementById("results");
   const updated = document.getElementById("updated");
-  const showVisualMap = document.getElementById("show-diagram").checked;
 
   results.innerHTML = `<div class="message">Loading ${currentTab === "live" ? "live status" : "planned works"}…</div>`;
 
@@ -394,7 +439,7 @@ async function loadStatus() {
         return Number(ag) - Number(bg);
       });
 
-      results.innerHTML = data.map(line => cardLive(line, showVisualMap)).join("");
+      results.innerHTML = data.map(cardLive).join("");
     } else {
       const response = await fetch(API_PLANNED);
       if (!response.ok) throw new Error("HTTP " + response.status);
@@ -424,7 +469,6 @@ document.getElementById("tab-live").addEventListener("click", (e) => {
   currentTab = "live";
   e.target.classList.add("active");
   document.getElementById("tab-planned").classList.remove("active");
-  document.getElementById("diagram-toggle-label").style.display = "flex";
   loadStatus();
 });
 
@@ -432,12 +476,10 @@ document.getElementById("tab-planned").addEventListener("click", (e) => {
   currentTab = "planned";
   e.target.classList.add("active");
   document.getElementById("tab-live").classList.remove("active");
-  document.getElementById("diagram-toggle-label").style.display = "none";
   loadStatus();
 });
 
 document.getElementById("refresh").addEventListener("click", loadStatus);
-document.getElementById("show-diagram").addEventListener("change", loadStatus);
 
 loadStatus();
 setInterval(loadStatus, 60_000);
