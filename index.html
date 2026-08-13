@@ -261,6 +261,7 @@ const LINE_COLORS = {
   "tram": { var: "var(--color-tram)", text: "#111" }
 };
 
+// FULL DIRECTORY FOR OVERGROUND & TUBE NETWORK STATIONS
 const LINE_ROUTES = {
   "london-overground": [
     "Richmond", "Kew Gardens", "Gunnersbury", "South Acton", "Acton Central", 
@@ -326,7 +327,7 @@ function escapeHtml(value) {
 }
 
 function cleanStationName(str) {
-  return str.toLowerCase().replace(/\s*(station|underground station|rail station)\s*/gi, '').trim();
+  return str.toLowerCase().replace(/\s*(station|underground station|rail station|line)\s*/gi, '').trim();
 }
 
 function toggleFavorite(lineId) {
@@ -348,6 +349,7 @@ function classify(statusText) {
   return { type: "minor", label: statusText || "Unknown" };
 }
 
+// ROBUST PARSER WITH OVERGROUND BRANCH MAP MATCHING
 function analyzeRouteStatus(lineId, statusObj) {
   const route = LINE_ROUTES[lineId] || [];
   const stationStatuses = new Map();
@@ -366,14 +368,14 @@ function analyzeRouteStatus(lineId, statusObj) {
     const reason = status.reason || status.disruption?.description || "";
     const lowerReason = reason.toLowerCase();
 
-    // Whole line closures
+    // 1. Whole line closures
     if (mainSeverity.type === "closed" && !lowerReason.includes("between") && !lowerReason.includes("from")) {
       route.forEach((_, idx) => stationStatuses.set(idx, "closed"));
       addBanner("closed", "No service on entire line");
       return;
     }
 
-    // Closed range parsing ("no service between A and B")
+    // 2. Multi-phrase parser capturing "no service between A and B"
     const closedRegex = /(?:no service|suspended|part closure|closed|part suspended)\s+(?:between|from)\s+([a-z0-9\s&'-]+?)\s+(?:and|to)\s+([a-z0-9\s&'-]+?)(?=\s+due|\s+while|\s+and|\.|$)/gi;
     let match;
 
@@ -400,7 +402,16 @@ function analyzeRouteStatus(lineId, statusObj) {
       }
     }
 
-    // Delays on remainder of line
+    // 3. Fallback: If no ranges match, check named stations directly in reason
+    if (stationStatuses.size === 0 && mainSeverity.type === "closed") {
+      route.forEach((st, idx) => {
+        if (lowerReason.includes(cleanStationName(st))) {
+          stationStatuses.set(idx, "closed");
+        }
+      });
+    }
+
+    // 4. Delays on remainder of line
     if (lowerReason.includes("severe delays") || mainSeverity.type === "severe") {
       route.forEach((_, idx) => {
         if (!stationStatuses.has(idx)) {
