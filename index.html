@@ -311,7 +311,7 @@
 </div>
 
 <script>
-// CORE UTILITY FUNCTIONS
+// CORE UTILITIES
 function escapeHtml(value) {
   const div = document.createElement("div");
   div.textContent = value || "";
@@ -340,7 +340,7 @@ let lastUpdatedTime = null;
 let cachedLiveMapData = [];
 let favoriteLines = new Set(JSON.parse(localStorage.getItem("tfl_fav_lines") || "[]"));
 
-// FONT SCALE CYCLER
+// FONT SCALE CONTROLLER
 const fontScales = [0, 5, 10];
 const fontScaleLabels = ["Normal", "Large (+5px)", "Extra Large (+10px)"];
 let currentFontIdx = parseInt(localStorage.getItem("tfl_font_idx") || "0", 10);
@@ -388,7 +388,7 @@ const PLANNED_SCHEDULE = [
   { line: "windrush", startDate: "2026-08-29", endDate: "2026-08-31", desc: "Windrush Line: Surrey Quays to Clapham Junction" }[cite: 1]
 ];
 
-// DARK MODE
+// DARK MODE HANDLER
 const darkModeToggle = document.getElementById("dark-mode-toggle");
 if (localStorage.getItem("tfl_dark_mode") === "true") {
   document.body.classList.add("dark-mode");
@@ -447,7 +447,6 @@ const INTERCHANGE_DIRECTORY = {
   "Whitechapel": ["district", "hammersmith-city", "elizabeth", "windrush"]
 };
 
-// FULL TREE STRUCTURES
 const LINE_TREES = {
   "central": {
     junctions: [
@@ -750,7 +749,17 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
 
 function openLineDetailView(lineId) {
   selectedLineDetailId = lineId;
-  const lineData = cachedLiveMapData.find(l => l.id === lineId) || { id: lineId, name: lineId.toUpperCase(), lineStatuses: [{ statusSeverityDescription: "Good Service" }] };
+  // Robust line detail fallback if looking up an Overground sub-line ID
+  let lineData = cachedLiveMapData.find(l => l.id === lineId);
+  if (!lineData) {
+    const parentOvg = cachedLiveMapData.find(l => l.id === "london-overground");
+    lineData = {
+      id: lineId,
+      name: lineId.charAt(0).toUpperCase() + lineId.slice(1) + " Line",
+      lineStatuses: parentOvg ? parentOvg.lineStatuses : [{ statusSeverityDescription: "Good Service" }]
+    };
+  }
+
   const results = document.getElementById("results");
   document.getElementById("toolbar").style.display = "none";
 
