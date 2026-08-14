@@ -190,7 +190,6 @@
       margin-left: 3px; text-transform: uppercase; vertical-align: middle;
     }
 
-    /* Journey Planner Form Styles */
     .jp-container {
       background: var(--card-bg); border-radius: 12px; padding: 18px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 16px;
@@ -312,6 +311,7 @@
 </div>
 
 <script>
+// CORE UTILITIES & APPLICATION STATE
 function escapeHtml(value) {
   const div = document.createElement("div");
   div.textContent = value || "";
@@ -340,7 +340,7 @@ let lastUpdatedTime = null;
 let cachedLiveMapData = [];
 let favoriteLines = new Set(JSON.parse(localStorage.getItem("tfl_fav_lines") || "[]"));
 
-// FONT SCALE CYCLER (+0px, +5px, +10px)
+// FONT SCALE CONTROLLER
 const fontScales = [0, 5, 10];
 const fontScaleLabels = ["Normal", "Large (+5px)", "Extra Large (+10px)"];
 let currentFontIdx = parseInt(localStorage.getItem("tfl_font_idx") || "0", 10);
@@ -357,7 +357,7 @@ document.getElementById("btn-font-toggle").addEventListener("click", () => {
 });
 applyFontScale();
 
-// EMBEDDED SCHEDULE DATA FROM TFL PLANNED TRACK CLOSURES PDF[cite: 1]
+// EMBEDDED PDF SCHEDULE DATA[cite: 1]
 const PLANNED_SCHEDULE = [
   { line: "district", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Turnham Green to Richmond" },[cite: 1]
   { line: "dlr", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Tower Gateway to Shadwell" },[cite: 1]
@@ -388,7 +388,7 @@ const PLANNED_SCHEDULE = [
   { line: "windrush", startDate: "2026-08-29", endDate: "2026-08-31", desc: "Windrush Line: Surrey Quays to Clapham Junction" }[cite: 1]
 ];
 
-// Dark Mode Handler
+// DARK MODE
 const darkModeToggle = document.getElementById("dark-mode-toggle");
 if (localStorage.getItem("tfl_dark_mode") === "true") {
   document.body.classList.add("dark-mode");
@@ -447,6 +447,7 @@ const INTERCHANGE_DIRECTORY = {
   "Whitechapel": ["district", "hammersmith-city", "elizabeth", "windrush"]
 };
 
+// FULL TREE STRUCTURES
 const LINE_TREES = {
   "central": {
     junctions: [
@@ -688,7 +689,7 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
 
     svgHtml += `<text x="46" y="${y + 4}" fill="${textFill}" font-size="12" font-weight="${status || isInterchange ? 'bold' : 'normal'}" style="cursor:pointer;" onclick="launchPlannerFromStation('${st.replace(/'/g, "\\'")}')">${escapeHtml(st)}</text>`;
     if (icBadges) {
-      svgHtml += `<foreignObject x="220" y="${y - 10}" width="180" height="20">${icBadges}</foreignObject>`;
+      svgHtml += `<foreignObject x="240" y="${y - 10}" width="180" height="20">${icBadges}</foreignObject>`;
     }
     currY += rowHeight;
   });
@@ -743,6 +744,24 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
 
   svgHtml += `</svg>`;
   return `<div class="svg-tree-wrapper">${svgHtml}</div>`;
+}
+
+function openLineDetailView(lineId) {
+  selectedLineDetailId = lineId;
+  const lineData = cachedLiveMapData.find(l => l.id === lineId) || { id: lineId, name: lineId.toUpperCase(), lineStatuses: [{ statusSeverityDescription: "Good Service" }] };
+  const results = document.getElementById("results");
+  document.getElementById("toolbar").style.display = "none";
+
+  results.innerHTML = `
+    <button class="btn-back" onclick="closeLineDetailView()">← Back to Network Map</button>
+    ${cardLive(lineData, true)}
+  `;
+}
+
+function closeLineDetailView() {
+  selectedLineDetailId = null;
+  document.getElementById("toolbar").style.display = "flex";
+  loadStatus();
 }
 
 function cardLive(line, forceOpenMap = false) {
@@ -831,7 +850,6 @@ function loadUpcomingWorks() {
   updateRelativeTime();
 }
 
-// MULTI-MODAL JOURNEY PLANNER COMPONENT (TFL + NATIONAL RAIL API)
 function renderJourneyPlannerUI(presetFrom = "", presetTo = "") {
   const results = document.getElementById("results");
   results.innerHTML = `
@@ -900,30 +918,7 @@ async function executeJourneySearch() {
   }
 }
 
-function openLineDetailView(lineId) {
-  selectedLineDetailId = lineId;
-  const lineData = cachedLiveMapData.find(l => l.id === lineId);
-  const results = document.getElementById("results");
-  document.getElementById("toolbar").style.display = "none";
-
-  if (!lineData) {
-    results.innerHTML = `<button class="btn-back" onclick="closeLineDetailView()">← Back to Network Map</button><div class="message">Line details not found.</div>`;
-    return;
-  }
-
-  results.innerHTML = `
-    <button class="btn-back" onclick="closeLineDetailView()">← Back to Network Map</button>
-    ${cardLive(lineData, true)}
-  `;
-}
-
-function closeLineDetailView() {
-  selectedLineDetailId = null;
-  document.getElementById("toolbar").style.display = "flex";
-  loadStatus();
-}
-
-// NETWORK MAP WITH EXCLUSIVE OVERGROUND SECTION (NO DUPLICATES)
+// STRICT EXCLUSIVE OVERGROUND CATEGORY GRID (PREVENTS DUPLICATION)
 function renderNetworkMap(data) {
   const results = document.getElementById("results");
 
@@ -942,7 +937,6 @@ function renderNetworkMap(data) {
   };
 
   data.forEach(line => {
-    // Strictly filter out generic 'london-overground' from Tube section to prevent duplicate display
     if (line.id !== "london-overground") {
       modeGroups.tube.lines.push(line);
     }
