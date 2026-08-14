@@ -279,6 +279,13 @@
 </div>
 
 <script>
+// UTILITY HELPERS (DECLARED FIRST TO PREVENT REFERENCE ERRORS)
+function escapeHtml(value) {
+  const div = document.createElement("div");
+  div.textContent = value || "";
+  return div.innerHTML;
+}
+
 const API_LIVE = "https://api.tfl.gov.uk/Line/Mode/tube,dlr,elizabeth-line,overground/Status?detail=true";
 
 let currentTab = "map";
@@ -701,12 +708,12 @@ function loadUpcomingWorks() {
     return;
   }
 
-  let html = `<div style="font-weight: 800; font-size: 16px; margin-bottom: 14px; color: var(--text-color);">🚧 Planned Works Schedule</div>`;
+  let html = `<div style="font-weight: 800; font-size: 16px; margin-bottom: 14px; color: var(--text-color);">🚧 Planned Track Closures Schedule</div>`;
 
   PLANNED_SCHEDULE.forEach(item => {
     const lineConf = LINE_COLORS[item.line] || { code: item.line };
-    const fromDate = new Date(item.startDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-    const toDate = new Date(item.endDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+    const fromDate = new Date(item.startDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    const toDate = new Date(item.endDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 
     html += `
       <div class="works-card">
