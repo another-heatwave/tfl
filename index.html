@@ -289,7 +289,6 @@ let favoriteLines = new Set(JSON.parse(localStorage.getItem("tfl_fav_lines") || 
 
 // EMBEDDED SCHEDULE DATA FROM TFL PLANNED TRACK CLOSURES PDF
 const PLANNED_SCHEDULE = [
-  // Aug 10 - Aug 16, 2026
   { line: "district", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Turnham Green to Richmond" },
   { line: "dlr", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Tower Gateway to Shadwell" },
   { line: "elizabeth", startDate: "2026-08-16", endDate: "2026-08-16", desc: "West Drayton to Slough (until 09:00)" },
@@ -297,8 +296,6 @@ const PLANNED_SCHEDULE = [
   { line: "london-overground", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Mildmay Line: Willesden Junction to Richmond" },
   { line: "london-overground", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Windrush Line: Wandsworth Road to Clapham Junction" },
   { line: "tram", startDate: "2026-08-10", endDate: "2026-08-30", desc: "Reeves Corner to East Croydon" },
-  
-  // Aug 17 - Aug 23, 2026
   { line: "circle", startDate: "2026-08-22", endDate: "2026-08-22", desc: "No service on entire line until 10:30; Edgware Road to Tower Hill via Victoria until 14:00" },
   { line: "district", startDate: "2026-08-22", endDate: "2026-08-22", desc: "No service on entire line until 10:30; Edgware Road/Embankment to Ealing Broadway, Olympia, Richmond & Wimbledon until 14:00" },
   { line: "district", startDate: "2026-08-22", endDate: "2026-08-23", desc: "Stamford Brook to Barons Court (EB), Earl's Court to Stamford Brook (WB), Earl's Court to Olympia, Fulham Broadway to Wimbledon (all after 14:00 Sat & all day Sun)" },
@@ -313,8 +310,6 @@ const PLANNED_SCHEDULE = [
   { line: "london-overground", startDate: "2026-08-23", endDate: "2026-08-23", desc: "Mildmay Line: Willesden Junction to Clapham Junction until 09:30; Camden Road to Stratford after 22:15" },
   { line: "london-overground", startDate: "2026-08-17", endDate: "2026-08-20", desc: "Weaver Line: Hackney Downs to Chingford after 22:45" },
   { line: "london-overground", startDate: "2026-08-23", endDate: "2026-08-23", desc: "Windrush Line: New Cross Gate to Crystal Palace & West Croydon; Highbury & Islington to Dalston Junction after 22:15" },
-
-  // Aug 24 - Aug 31, 2026
   { line: "northern", startDate: "2026-08-28", endDate: "2026-08-29", desc: "Camden Town to High Barnet during Friday Night Tube" },
   { line: "northern", startDate: "2026-08-29", endDate: "2026-08-31", desc: "Archway to High Barnet and Mill Hill East (inc. Sat Night Tube)" },
   { line: "piccadilly", startDate: "2026-08-25", endDate: "2026-08-27", desc: "Cockfosters to Uxbridge" },
@@ -838,8 +833,16 @@ async function loadStatus() {
   results.innerHTML = `<div class="message">Loading information…</div>`;
 
   try {
-    const response = await fetch(API_LIVE);
-    if (!response.ok) throw new Error("HTTP " + response.status);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    const response = await fetch(API_LIVE, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`TfL Server returned HTTP ${response.status} (${response.statusText})`);
+    }
+
     let data = await response.json();
     cachedLiveMapData = data;
 
@@ -878,11 +881,19 @@ async function loadStatus() {
     lastUpdatedTime = new Date();
     updateRelativeTime();
   } catch (error) {
-    console.error(error);
+    console.error("Diagnostic Log:", error);
+    
+    let cause = error.message;
+    if (error.name === 'AbortError') {
+      cause = "Request timed out after 10 seconds. TfL API may be responding slowly.";
+    } else if (window.location.protocol === 'file:') {
+      cause = "Local file restriction detected (file://). Please view via a local server or web host like GitHub Pages.";
+    }
+
     results.innerHTML = `
       <div class="message">
         <strong>Couldn't load information.</strong>
-        <p>Check your internet connection and try again.</p>
+        <p style="margin-top: 8px; font-size: 13px; color: var(--status-closed);">${cause}</p>
       </div>`;
     document.getElementById("updated").textContent = "Unable to update";
   }
