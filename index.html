@@ -311,7 +311,7 @@
 </div>
 
 <script>
-// CORE UTILITIES & APPLICATION STATE
+// CORE UTILITY FUNCTIONS
 function escapeHtml(value) {
   const div = document.createElement("div");
   div.textContent = value || "";
@@ -340,7 +340,7 @@ let lastUpdatedTime = null;
 let cachedLiveMapData = [];
 let favoriteLines = new Set(JSON.parse(localStorage.getItem("tfl_fav_lines") || "[]"));
 
-// FONT SCALE CONTROLLER
+// FONT SCALE CYCLER
 const fontScales = [0, 5, 10];
 const fontScaleLabels = ["Normal", "Large (+5px)", "Extra Large (+10px)"];
 let currentFontIdx = parseInt(localStorage.getItem("tfl_font_idx") || "0", 10);
@@ -534,7 +534,9 @@ function evaluateStationStatuses(lineId, lineStatuses) {
     allStations = LINE_ROUTES[lineId] || [];
   }
 
-  lineStatuses.forEach(status => {
+  const statusList = Array.isArray(lineStatuses) ? lineStatuses : [];
+
+  statusList.forEach(status => {
     const mainSeverity = classify(status.statusSeverityDescription);
     const reason = status.reason || status.disruption?.description || "";
     const lowerReason = reason.toLowerCase();
@@ -609,7 +611,7 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
 
   if (!LINE_TREES[lineId]) {
     const route = LINE_ROUTES[lineId] || [];
-    if (route.length === 0) return '';
+    if (!Array.isArray(route) || route.length === 0) return '';
 
     const rowHeight = 32;
     const svgHeight = route.length * rowHeight + 20;
@@ -918,7 +920,6 @@ async function executeJourneySearch() {
   }
 }
 
-// STRICT EXCLUSIVE OVERGROUND CATEGORY GRID (PREVENTS DUPLICATION)
 function renderNetworkMap(data) {
   const results = document.getElementById("results");
 
