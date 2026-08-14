@@ -7,12 +7,11 @@
   <title>TfL Status Simplified</title>
   <style>
     :root {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      --font-scale: 0px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       --bg-color: #f2f2f2;
       --card-bg: #ffffff;
       --text-color: #111111;
-      --text-muted: #666666;
+      --text-muted: #555555;
       --border-color: #eeeeee;
       --input-bg: #ffffff;
       --toolbar-bg: #eaeaea;
@@ -46,7 +45,7 @@
       /* Status Palette */
       --status-closed: #c62828;
       --status-severe: #e65100;
-      --status-minor: #f57f17;
+      --status-minor: #d97706;
       --status-good: #148a36;
       --status-planned: #d97706;
     }
@@ -55,7 +54,7 @@
       --bg-color: #121212;
       --card-bg: #1e1e1e;
       --text-color: #f0f0f0;
-      --text-muted: #aaaaaa;
+      --text-muted: #bbbbbb;
       --border-color: #2c2c2c;
       --input-bg: #2a2a2a;
       --toolbar-bg: #1a1a1a;
@@ -66,14 +65,15 @@
       margin: 0; background: var(--bg-color); color: var(--text-color);
       min-height: 100vh; display: flex; flex-direction: column;
       transition: background 0.2s ease, color 0.2s ease;
-      font-size: calc(14px + var(--font-scale));
+      font-size: 15px;
+      line-height: 1.5;
     }
     header {
       background: #111; color: white;
       padding: calc(18px + env(safe-area-inset-top)) 18px 18px;
     }
-    header h1 { margin: 0; font-size: calc(22px + var(--font-scale)); }
-    header p { margin: 5px 0 0; color: #d0d0d0; font-size: calc(14px + var(--font-scale)); }
+    header h1 { margin: 0; font-size: 22px; }
+    header p { margin: 5px 0 0; color: #d0d0d0; font-size: 14px; }
     
     .tab-bar {
       display: flex; background: #222; padding: 4px;
@@ -81,7 +81,7 @@
     }
     .tab-btn {
       flex: 1; background: transparent; color: #aaa; border: 0;
-      padding: 10px 6px; font-size: calc(13px + var(--font-scale)); font-weight: 700; cursor: pointer;
+      padding: 10px 6px; font-size: 14px; font-weight: 700; cursor: pointer;
       border-radius: 8px; transition: all 0.2s ease; text-align: center; white-space: nowrap;
     }
     .tab-btn.active { background: #fff; color: #111; }
@@ -98,27 +98,22 @@
     }
     .search-input {
       width: 100%; padding: 10px 14px; border: 1px solid var(--border-color);
-      border-radius: 10px; font-size: calc(14px + var(--font-scale)); outline: none;
+      border-radius: 10px; font-size: 15px; outline: none;
       background: var(--input-bg); color: var(--text-color);
       box-shadow: inset 0 1px 3px rgba(0,0,0,0.04);
     }
 
     .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .toggle-fav, .toggle-theme {
-      font-size: calc(13px + var(--font-scale)); font-weight: 600; cursor: pointer; user-select: none;
+      font-size: 14px; font-weight: 600; cursor: pointer; user-select: none;
       display: flex; align-items: center; gap: 6px;
     }
-    .btn-font-scale {
-      border: 1px solid var(--border-color); background: var(--card-bg);
-      color: var(--text-color); font-weight: 800; border-radius: 6px;
-      padding: 6px 12px; cursor: pointer; font-size: calc(13px + var(--font-scale));
-    }
-    #updated { color: var(--text-muted); font-size: calc(13px + var(--font-scale)); }
+    #updated { color: var(--text-muted); font-size: 13px; }
     
     button.btn-refresh {
       border: 0; border-radius: 8px; padding: 8px 14px;
       font-weight: 700; cursor: pointer; background: #111; color: white;
-      font-size: calc(13px + var(--font-scale)); display: inline-flex; align-items: center; gap: 6px;
+      font-size: 14px; display: inline-flex; align-items: center; gap: 6px;
       transition: background 0.2s ease;
     }
     body.dark-mode button.btn-refresh { background: #333; }
@@ -127,7 +122,7 @@
     button.btn-back {
       border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 14px;
       font-weight: 700; cursor: pointer; background: var(--card-bg); color: var(--text-color);
-      font-size: calc(13px + var(--font-scale)); margin-bottom: 14px; display: inline-flex; align-items: center; gap: 6px;
+      font-size: 14px; margin-bottom: 14px; display: inline-flex; align-items: center; gap: 6px;
     }
 
     .card {
@@ -143,11 +138,11 @@
     
     .line-badge {
       background: var(--line-color, var(--color-default));
-      color: var(--badge-text, #fff); font-size: calc(14px + var(--font-scale)); font-weight: 800;
-      padding: 5px 12px; border-radius: 6px; display: inline-block;
+      color: var(--badge-text, #fff); font-size: 14px; font-weight: 800;
+      padding: 6px 12px; border-radius: 6px; display: inline-block; letter-spacing: 0.2px;
     }
 
-    .status { font-size: calc(14px + var(--font-scale)); font-weight: 800; text-align: right; }
+    .status { font-size: 14px; font-weight: 800; text-align: right; }
     .status.good { color: var(--status-good); }
     .status.closed { color: var(--status-closed); }
     .status.severe { color: var(--status-severe); }
@@ -157,12 +152,12 @@
     .details { padding: 0 15px 15px; border-top: 1px solid var(--border-color); }
 
     .segment-summary {
-      font-size: calc(13px + var(--font-scale)); font-weight: 700; padding: 8px 12px;
+      font-size: 14px; font-weight: 700; padding: 8px 12px;
       border-radius: 0 6px 6px 0; margin-top: 12px;
     }
     .segment-summary.closed { background: rgba(198, 40, 40, 0.15); border-left: 3px solid var(--status-closed); color: var(--status-closed); }
     .segment-summary.severe { background: rgba(230, 81, 0, 0.15); border-left: 3px solid var(--status-severe); color: var(--status-severe); }
-    .segment-summary.minor { background: rgba(245, 127, 23, 0.15); border-left: 3px solid var(--status-minor); color: var(--status-minor); }
+    .segment-summary.minor { background: rgba(217, 119, 6, 0.15); border-left: 3px solid var(--status-minor); color: var(--status-minor); }
     .segment-summary.planned { background: rgba(217, 119, 6, 0.15); border-left: 3px solid var(--status-planned); color: var(--status-planned); }
 
     .svg-tree-wrapper {
@@ -177,18 +172,18 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     }
     .works-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
-    .works-date { font-size: calc(12px + var(--font-scale)); font-weight: 800; background: rgba(217, 119, 6, 0.15); color: var(--status-planned); padding: 4px 8px; border-radius: 6px; }
+    .works-date { font-size: 12px; font-weight: 800; background: rgba(217, 119, 6, 0.15); color: var(--status-planned); padding: 4px 8px; border-radius: 6px; }
 
     .ic-badge {
-      display: inline-flex; align-items: center; gap: 2px; font-size: 9px;
-      font-weight: 800; padding: 1px 4px; border-radius: 3px; color: #fff;
-      margin-left: 3px; text-transform: uppercase; vertical-align: middle;
+      display: inline-flex; align-items: center; gap: 2px; font-size: 10px;
+      font-weight: 800; padding: 2px 5px; border-radius: 4px; color: #fff;
+      margin-left: 4px; text-transform: uppercase; vertical-align: middle;
     }
 
     .network-container { background: var(--card-bg); border-radius: 12px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
-    .network-title { font-size: calc(18px + var(--font-scale)); font-weight: 800; margin-bottom: 12px; }
+    .network-title { font-size: 18px; font-weight: 800; margin-bottom: 12px; }
     .network-section-heading {
-      font-size: calc(14px + var(--font-scale)); font-weight: 800; text-transform: uppercase;
+      font-size: 14px; font-weight: 800; text-transform: uppercase;
       color: var(--text-muted); margin: 20px 0 10px; letter-spacing: 0.5px;
       border-bottom: 1px solid var(--border-color); padding-bottom: 6px;
     }
@@ -202,13 +197,13 @@
     .network-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--text-muted); }
 
     details.raw-details { margin-top: 10px; }
-    details.raw-details summary { color: var(--text-muted); font-size: calc(13px + var(--font-scale)); font-weight: 600; cursor: pointer; }
-    .raw { background: var(--border-color); padding: 10px; margin-top: 8px; font-size: calc(13px + var(--font-scale)); line-height: 1.4; border-radius: 6px; }
+    details.raw-details summary { color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer; }
+    .raw { background: var(--border-color); padding: 10px; margin-top: 8px; font-size: 13px; line-height: 1.4; border-radius: 6px; }
     .message { background: var(--card-bg); padding: 18px; border-radius: 12px; text-align: center; color: var(--text-muted); }
 
     footer {
       text-align: center; padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
-      font-size: calc(13px + var(--font-scale)); color: var(--text-muted); border-top: 1px solid var(--border-color); background: var(--toolbar-bg);
+      font-size: 13px; color: var(--text-muted); border-top: 1px solid var(--border-color); background: var(--toolbar-bg);
     }
     footer a { color: var(--text-color); font-weight: 700; text-decoration: underline; cursor: pointer; }
 
@@ -224,10 +219,10 @@
       color: var(--text-color);
     }
     .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .modal-header h2 { margin: 0; font-size: calc(18px + var(--font-scale)); }
+    .modal-header h2 { margin: 0; font-size: 18px; }
     .btn-close-modal { background: none; border: 0; font-size: 22px; cursor: pointer; color: var(--text-muted); font-weight: 700; }
-    .modal-body h3 { font-size: calc(15px + var(--font-scale)); margin: 18px 0 6px; }
-    .modal-body p { font-size: calc(14px + var(--font-scale)); line-height: 1.5; color: var(--text-color); margin: 0 0 10px; }
+    .modal-body h3 { font-size: 15px; margin: 18px 0 6px; }
+    .modal-body p { font-size: 14px; line-height: 1.5; color: var(--text-color); margin: 0 0 10px; }
   </style>
 </head>
 <body>
@@ -248,7 +243,6 @@
     <div class="toolbar-row">
       <div class="controls">
         <button class="btn-refresh" id="btn-refresh">🔄 Refresh Status</button>
-        <button class="btn-font-scale" id="btn-font-toggle">🔤 Text: Normal</button>
         <label class="toggle-theme">
           <input type="checkbox" id="dark-mode-toggle"> 🌙 Dark Mode
         </label>
@@ -276,15 +270,13 @@
       <p>Your main dashboard. Underground, Elizabeth, DLR, and all 6 individual London Overground lines are categorized clearly without duplicates. Tap on any line to view its visual branch map.</p>
 
       <h3>⚠️ Status Symbols</h3>
-      <p>Route maps use subtle warning icons next to station names:</p>
+      <p>Route maps use clear warning icons next to station names:</p>
       <ul>
-        <li><strong>⚠️ Warning Sign:</strong> Minor Delays on this segment.</li>
-        <li><strong>🚨 Alert Sign:</strong> Severe Delays on this segment.</li>
+        <li><strong>⚠️ Warning Sign:</strong> Minor Delays on this station or branch segment.</li>
+        <li><strong>🚨 Alert Sign:</strong> Severe Delays on this station or branch segment.</li>
         <li><strong>⛔ Stop Sign:</strong> Closed / No Service on this segment.</li>
+        <li><strong>🚧 Barrier Sign:</strong> Planned Track Works.</li>
       </ul>
-
-      <h3>🔤 Text Size Toggle</h3>
-      <p>Click the <strong>Text</strong> button in the toolbar to step through Normal (+0px), Large (+5px), and Extra Large (+10px) font scaling across the application.</p>
     </div>
   </div>
 </div>
@@ -318,24 +310,7 @@ let selectedLineDetailId = null;
 let lastUpdatedTime = null;
 let cachedLiveMapData = [];
 
-// FONT SCALE CYCLER CONTROLLER (+0px, +5px, +10px)
-const fontScales = [0, 5, 10];
-const fontScaleLabels = ["Normal", "Large (+5px)", "Extra Large (+10px)"];
-let currentFontIdx = parseInt(localStorage.getItem("tfl_font_idx") || "0", 10);
-
-function applyFontScale() {
-  document.documentElement.style.setProperty('--font-scale', `${fontScales[currentFontIdx]}px`);
-  document.getElementById("btn-font-toggle").textContent = `🔤 Text: ${fontScaleLabels[currentFontIdx]}`;
-  localStorage.setItem("tfl_font_idx", currentFontIdx.toString());
-}
-
-document.getElementById("btn-font-toggle").addEventListener("click", () => {
-  currentFontIdx = (currentFontIdx + 1) % fontScales.length;
-  applyFontScale();
-});
-applyFontScale();
-
-// EMBEDDED PDF SCHEDULE DATA
+// EMBEDDED SCHEDULE DATA
 const PLANNED_SCHEDULE = [
   { line: "district", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Turnham Green to Richmond" },
   { line: "dlr", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Tower Gateway to Shadwell" },
@@ -406,7 +381,9 @@ const LINE_COLORS = {
   "national-rail": { var: "var(--color-national-rail)", text: "#fff", hex: "#d2172a", name: "National Rail" }
 };
 
+// COMPREHENSIVE INTERCHANGE DIRECTORY
 const INTERCHANGE_DIRECTORY = {
+  "Bond Street": ["central", "jubilee", "elizabeth"],
   "Oxford Circus": ["bakerloo", "central", "victoria"],
   "King's Cross St Pancras": ["circle", "hammersmith-city", "metropolitan", "northern", "piccadilly", "victoria", "national-rail"],
   "Baker Street": ["bakerloo", "circle", "hammersmith-city", "jubilee", "metropolitan"],
@@ -422,7 +399,20 @@ const INTERCHANGE_DIRECTORY = {
   "Embankment": ["bakerloo", "circle", "district", "northern"],
   "Holborn": ["central", "piccadilly"],
   "Tottenham Court Road": ["central", "northern", "elizabeth"],
-  "Whitechapel": ["district", "hammersmith-city", "elizabeth", "windrush"]
+  "Whitechapel": ["district", "hammersmith-city", "elizabeth", "windrush"],
+  "Finsbury Park": ["piccadilly", "victoria", "national-rail"],
+  "West Ham": ["district", "hammersmith-city", "jubilee", "dlr", "national-rail"],
+  "Canning Town": ["jubilee", "dlr"],
+  "Clapham Junction": ["mildmay", "windrush", "national-rail"],
+  "Richmond": ["district", "mildmay", "national-rail"],
+  "Ealing Broadway": ["central", "district", "elizabeth", "national-rail"],
+  "Willesden Junction": ["bakerloo", "mildmay", "lioness"],
+  "Seven Sisters": ["victoria", "weaver", "national-rail"],
+  "Warren Street": ["northern", "victoria"],
+  "Leicester Square": ["northern", "piccadilly"],
+  "Charing Cross": ["bakerloo", "northern", "national-rail"],
+  "Elephant & Castle": ["bakerloo", "northern", "national-rail"],
+  "Moorgate": ["circle", "hammersmith-city", "metropolitan", "northern", "national-rail"]
 };
 
 // FULL TREE STRUCTURES
@@ -490,6 +480,7 @@ const LINE_ROUTES = {
   "liberty": ["Romford", "Emerson Park", "Upminster"]
 };
 
+// EVALUATE STATION STATUSES (STRICT TOP-LEVEL OVERRIDE PREVENTS STATUS MISMATCH)
 function evaluateStationStatuses(lineId, lineStatuses) {
   const stationStatuses = new Map();
   const summaryBanners = [];
@@ -520,7 +511,7 @@ function evaluateStationStatuses(lineId, lineStatuses) {
     const lowerReason = reason.toLowerCase();
 
     const isPlannedWork = lowerReason.includes("planned") || lowerReason.includes("work") || lowerReason.includes("engineering");
-    const severityType = isPlannedWork ? "planned" : (mainSeverity.type === "closed" ? "closed" : mainSeverity.type);
+    const severityType = isPlannedWork ? "planned" : mainSeverity.type;
 
     const closedRegex = /(?:no service|suspended|part closure|closed|part suspended)\s+(?:between|from)\s+([a-z0-9\s&'-]+?)\s+(?:and|to)\s+([a-z0-9\s&'-]+?)(?=\s+due|\s+while|\s+and|\.|$)/gi;
     let match;
@@ -551,10 +542,10 @@ function evaluateStationStatuses(lineId, lineStatuses) {
       addBanner(severityType, isPlannedWork ? "Planned works across entire line" : "No service across entire line");
     }
 
-    if (lowerReason.includes("severe delays") && !foundRange) {
+    if (mainSeverity.type === "severe" && !foundRange) {
       allStations.forEach(st => stationStatuses.set(st, "severe"));
       addBanner("severe", "Severe Delays across entire line");
-    } else if (lowerReason.includes("minor delays") && !foundRange) {
+    } else if (mainSeverity.type === "minor" && !foundRange) {
       allStations.forEach(st => stationStatuses.set(st, "minor"));
       addBanner("minor", "Minor Delays across entire line");
     }
@@ -577,7 +568,7 @@ function getInterchangeBadgesHtml(currentLineId, stationName) {
   }).join("");
 }
 
-// ROUTE MAP DIAGRAM WITH OPTION 1 SYMBOLS (⚠️ Minor Delays, 🚨 Severe Delays, ⛔ Closed)
+// ENHANCED ROUTE MAP DIAGRAM (CLEAR HIGH-CONTRAST TYPOGRAPHY + WIDER SPACING)
 function renderSVGTreeDiagram(lineId, stationStatuses) {
   const lineConf = LINE_COLORS[lineId] || { hex: "#EE7C0E" };
   const baseColor = lineConf.hex;
@@ -595,22 +586,22 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
     if (status === "severe") return { fill: "var(--status-severe)", stroke: "var(--status-severe)", symbol: isLineWideDelay ? "" : " 🚨", text: "var(--status-severe)" };
     if (status === "minor") return { fill: "var(--status-minor)", stroke: "var(--status-minor)", symbol: isLineWideDelay ? "" : " ⚠️", text: "var(--status-minor)" };
     if (status === "planned") return { fill: "var(--status-planned)", stroke: "var(--status-planned)", symbol: " 🚧", text: "var(--status-planned)" };
-    return { fill: "#ffffff", stroke: baseColor, symbol: "", text: "var(--text-muted)" };
+    return { fill: "#ffffff", stroke: baseColor, symbol: "", text: "var(--text-color)" };
   }
 
   if (!LINE_TREES[lineId]) {
     const route = LINE_ROUTES[lineId] || [];
     if (!Array.isArray(route) || route.length === 0) return '';
 
-    const rowHeight = 32;
+    const rowHeight = 34;
     const svgHeight = route.length * rowHeight + 30;
 
-    let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 380 ${svgHeight}">`;
+    let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 520 ${svgHeight}">`;
 
-    svgHtml += `<line x1="20" y1="20" x2="20" y2="${(route.length - 1) * rowHeight + 20}" stroke="${baseColor}" stroke-width="4" opacity="0.4" />`;
+    svgHtml += `<line x1="22" y1="22" x2="22" y2="${(route.length - 1) * rowHeight + 22}" stroke="${baseColor}" stroke-width="4.5" opacity="0.45" />`;
 
     route.forEach((st, i) => {
-      const y = i * rowHeight + 20;
+      const y = i * rowHeight + 22;
       const status = stationStatuses.get(st);
       const style = getStatusStyle(status);
 
@@ -618,15 +609,15 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
       const isInterchange = Boolean(icBadges);
 
       if (isInterchange) {
-        svgHtml += `<circle cx="20" cy="${y}" r="8" fill="#ffffff" stroke="#000000" stroke-width="3" />`;
-        svgHtml += `<circle cx="20" cy="${y}" r="4" fill="${style.fill}" stroke="${style.stroke}" stroke-width="2" />`;
+        svgHtml += `<circle cx="22" cy="${y}" r="9" fill="#ffffff" stroke="#000000" stroke-width="3" />`;
+        svgHtml += `<circle cx="22" cy="${y}" r="4.5" fill="${style.fill}" stroke="${style.stroke}" stroke-width="2" />`;
       } else {
-        svgHtml += `<circle cx="20" cy="${y}" r="6" fill="${style.fill}" stroke="${style.stroke}" stroke-width="3" />`;
+        svgHtml += `<circle cx="22" cy="${y}" r="6.5" fill="${style.fill}" stroke="${style.stroke}" stroke-width="3" />`;
       }
 
-      svgHtml += `<text x="36" y="${y + 4}" fill="${style.text}" font-size="12" font-weight="${status || isInterchange ? 'bold' : 'normal'}">${escapeHtml(st)}${style.symbol}</text>`;
+      svgHtml += `<text x="40" y="${y + 4.5}" fill="${style.text}" font-size="13" font-weight="${status || isInterchange ? '700' : '600'}">${escapeHtml(st)}${style.symbol}</text>`;
       if (icBadges) {
-        svgHtml += `<foreignObject x="200" y="${y - 10}" width="170" height="20">${icBadges}</foreignObject>`;
+        svgHtml += `<foreignObject x="260" y="${y - 10}" width="250" height="22">${icBadges}</foreignObject>`;
       }
     });
 
@@ -635,7 +626,7 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
   }
 
   const tree = LINE_TREES[lineId];
-  const rowHeight = 32;
+  const rowHeight = 34;
   
   let maxBranchStationCount = 0;
   tree.junctions.forEach(j => {
@@ -646,14 +637,14 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
 
   const totalCalculatedRows = tree.trunk.length + (tree.junctions.length * 2) + maxBranchStationCount + 2;
   const svgHeight = totalCalculatedRows * rowHeight + 40;
-  let currY = 20;
+  let currY = 22;
 
-  let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 440 ${svgHeight}">`;
+  let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 580 ${svgHeight}">`;
 
   tree.trunk.forEach((st, i) => {
     const y = currY;
     if (i < tree.trunk.length - 1) {
-      svgHtml += `<line x1="30" y1="${y}" x2="30" y2="${y + rowHeight}" stroke="${baseColor}" stroke-width="4" opacity="0.4" />`;
+      svgHtml += `<line x1="32" y1="${y}" x2="32" y2="${y + rowHeight}" stroke="${baseColor}" stroke-width="4.5" opacity="0.45" />`;
     }
 
     const status = stationStatuses.get(st);
@@ -663,15 +654,15 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
     const isInterchange = Boolean(icBadges);
 
     if (isInterchange) {
-      svgHtml += `<circle cx="30" cy="${y}" r="8" fill="#ffffff" stroke="#000000" stroke-width="3" />`;
-      svgHtml += `<circle cx="30" cy="${y}" r="4" fill="${style.fill}" stroke="${style.stroke}" stroke-width="2" />`;
+      svgHtml += `<circle cx="32" cy="${y}" r="9" fill="#ffffff" stroke="#000000" stroke-width="3" />`;
+      svgHtml += `<circle cx="32" cy="${y}" r="4.5" fill="${style.fill}" stroke="${style.stroke}" stroke-width="2" />`;
     } else {
-      svgHtml += `<circle cx="30" cy="${y}" r="6" fill="${style.fill}" stroke="${style.stroke}" stroke-width="3" />`;
+      svgHtml += `<circle cx="32" cy="${y}" r="6.5" fill="${style.fill}" stroke="${style.stroke}" stroke-width="3" />`;
     }
 
-    svgHtml += `<text x="46" y="${y + 4}" fill="${style.text}" font-size="12" font-weight="${status || isInterchange ? 'bold' : 'normal'}">${escapeHtml(st)}${style.symbol}</text>`;
+    svgHtml += `<text x="50" y="${y + 4.5}" fill="${style.text}" font-size="13" font-weight="${status || isInterchange ? '700' : '600'}">${escapeHtml(st)}${style.symbol}</text>`;
     if (icBadges) {
-      svgHtml += `<foreignObject x="240" y="${y - 10}" width="180" height="20">${icBadges}</foreignObject>`;
+      svgHtml += `<foreignObject x="280" y="${y - 10}" width="280" height="22">${icBadges}</foreignObject>`;
     }
     currY += rowHeight;
   });
@@ -681,25 +672,25 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
     const status = stationStatuses.get(j.name);
     const style = getStatusStyle(status);
 
-    svgHtml += `<line x1="30" y1="${jY - rowHeight}" x2="30" y2="${jY}" stroke="${baseColor}" stroke-width="4" opacity="0.4" />`;
-    svgHtml += `<circle cx="30" cy="${jY}" r="8" fill="#ffffff" stroke="#000000" stroke-width="4" />`;
-    svgHtml += `<circle cx="30" cy="${jY}" r="4" fill="${style.fill}" stroke="${style.stroke}" stroke-width="2" />`;
-    svgHtml += `<text x="46" y="${jY + 4}" fill="var(--text-color)" font-size="12" font-weight="bold">${escapeHtml(j.name)} (Junction)</text>`;
+    svgHtml += `<line x1="32" y1="${jY - rowHeight}" x2="32" y2="${jY}" stroke="${baseColor}" stroke-width="4.5" opacity="0.45" />`;
+    svgHtml += `<circle cx="32" cy="${jY}" r="9" fill="#ffffff" stroke="#000000" stroke-width="4" />`;
+    svgHtml += `<circle cx="32" cy="${jY}" r="4.5" fill="${style.fill}" stroke="${style.stroke}" stroke-width="2" />`;
+    svgHtml += `<text x="50" y="${jY + 4.5}" fill="var(--text-color)" font-size="13" font-weight="800">${escapeHtml(j.name)} (Junction)</text>`;
 
     const forkStartY = jY;
-    const branchStartY = jY + 30;
+    const branchStartY = jY + 32;
 
-    const xOffsets = [30, 210, 340];
+    const xOffsets = [32, 260, 480];
     let maxBranchLen = 0;
 
     j.splits.forEach((branchStations, bIdx) => {
-      const targetX = xOffsets[bIdx] || (30 + bIdx * 150);
+      const targetX = xOffsets[bIdx] || (32 + bIdx * 220);
       if (branchStations.length > maxBranchLen) maxBranchLen = branchStations.length;
 
-      svgHtml += `<path d="M 30 ${forkStartY} C 30 ${forkStartY + 20}, ${targetX} ${forkStartY + 10}, ${targetX} ${branchStartY}" stroke="${baseColor}" stroke-width="3" fill="none" opacity="0.5" />`;
+      svgHtml += `<path d="M 32 ${forkStartY} C 32 ${forkStartY + 20}, ${targetX} ${forkStartY + 10}, ${targetX} ${branchStartY}" stroke="${baseColor}" stroke-width="3.5" fill="none" opacity="0.5" />`;
 
       if (branchStations.length > 1) {
-        svgHtml += `<line x1="${targetX}" y1="${branchStartY}" x2="${targetX}" y2="${branchStartY + (branchStations.length - 1) * rowHeight}" stroke="${baseColor}" stroke-width="3" opacity="0.4" />`;
+        svgHtml += `<line x1="${targetX}" y1="${branchStartY}" x2="${targetX}" y2="${branchStartY + (branchStations.length - 1) * rowHeight}" stroke="${baseColor}" stroke-width="3.5" opacity="0.45" />`;
       }
 
       let bY = branchStartY;
@@ -709,13 +700,13 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
         const bIcBadges = getInterchangeBadgesHtml(lineId, st);
 
         if (bIcBadges) {
-          svgHtml += `<circle cx="${targetX}" cy="${bY}" r="7" fill="#ffffff" stroke="#000000" stroke-width="2.5" />`;
-          svgHtml += `<circle cx="${targetX}" cy="${bY}" r="3" fill="${bStyle.fill}" stroke="${bStyle.stroke}" stroke-width="1.5" />`;
+          svgHtml += `<circle cx="${targetX}" cy="${bY}" r="8" fill="#ffffff" stroke="#000000" stroke-width="2.5" />`;
+          svgHtml += `<circle cx="${targetX}" cy="${bY}" r="3.5" fill="${bStyle.fill}" stroke="${bStyle.stroke}" stroke-width="1.5" />`;
         } else {
-          svgHtml += `<circle cx="${targetX}" cy="${bY}" r="5" fill="${bStyle.fill}" stroke="${bStyle.stroke}" stroke-width="2.5" />`;
+          svgHtml += `<circle cx="${targetX}" cy="${bY}" r="5.5" fill="${bStyle.fill}" stroke="${bStyle.stroke}" stroke-width="2.5" />`;
         }
 
-        svgHtml += `<text x="${targetX + 12}" y="${bY + 4}" fill="${bStyle.text}" font-size="11" font-weight="${bStatus || bIcBadges ? 'bold' : 'normal'}">${escapeHtml(st)}${bStyle.symbol}</text>`;
+        svgHtml += `<text x="${targetX + 14}" y="${bY + 4.5}" fill="${bStyle.text}" font-size="12" font-weight="${bStatus || bIcBadges ? '700' : '600'}">${escapeHtml(st)}${bStyle.symbol}</text>`;
         bY += rowHeight;
       });
     });
@@ -857,7 +848,6 @@ function renderNetworkMap(data) {
   };
 
   data.forEach(line => {
-    // Completely exclude parent 'london-overground' from Underground grid
     if (line.id !== "london-overground") {
       modeGroups.tube.lines.push(line);
     }
