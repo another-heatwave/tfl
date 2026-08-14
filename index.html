@@ -517,7 +517,7 @@ function getInterchangeBadgesHtml(currentLineId, stationName) {
   }).join("");
 }
 
-// ROUTE MAP DIAGRAM WITH WARNING SYMBOLS SHOWN FOR ALL STATIONS
+// ROUTE MAP DIAGRAM WITH WARNING SYMBOLS SHOWN FOR ALL AFFECTED STATIONS
 function renderSVGTreeDiagram(lineId, stationStatuses) {
   const lineConf = LINE_COLORS[lineId] || { hex: "#EE7C0E" };
   const baseColor = lineConf.hex;
@@ -789,7 +789,11 @@ function renderNetworkMap(data) {
   };
 
   data.forEach(line => {
-    if (line.id !== "london-overground") {
+    const isOverground = line.id === "london-overground" || 
+                         line.modeName === "overground" || 
+                         line.id.includes("overground");
+
+    if (!isOverground) {
       modeGroups.tube.lines.push(line);
     }
   });
