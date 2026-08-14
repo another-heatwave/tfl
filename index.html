@@ -32,7 +32,7 @@
       --color-london-overground: #EE7C0E;
       --color-elizabeth: #6950A1;
       --color-tram: #84B817;
-      --color-national-rail: #333333;
+      --color-national-rail: #d2172a;
       --color-default: #555555;
 
       /* Status Palette */
@@ -170,8 +170,9 @@
     .works-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
     .works-date { font-size: 12px; font-weight: 800; background: rgba(217, 119, 6, 0.15); color: var(--status-planned); padding: 4px 8px; border-radius: 6px; }
 
+    /* Interchange Line Tag Badges */
     .ic-badge {
-      display: inline-flex; align-items: center; gap: 3px; font-size: 10px;
+      display: inline-flex; align-items: center; gap: 3px; font-size: 9px;
       font-weight: 800; padding: 1px 5px; border-radius: 4px; color: #fff;
       margin-left: 4px; text-transform: uppercase; vertical-align: middle;
     }
@@ -270,7 +271,7 @@
       <p>Your main dashboard. It breaks down London's transport network into clear groups—Underground & Rail lines and London Overground lines. Tap on any line to see a visual map that forks at real junctions.</p>
 
       <h3>🔴 Live Status</h3>
-      <p>A quick-glance list of every line, automatically sorted so any line with delays or closures pops to the top. Interchange badges show connecting lines at major stations.</p>
+      <p>A quick-glance list of every line, automatically sorted so any line with delays or closures pops to the top. Interchange badges show connecting lines and National Rail connections at major stations.</p>
 
       <h3>🚧 Upcoming Works</h3>
       <p>Provides advance warning of planned engineering work scheduled up to 7 days in advance, so weekend closures don't catch you by surprise.</p>
@@ -279,7 +280,6 @@
 </div>
 
 <script>
-// UTILITY FUNCTIONS (DECLARED AT TOP TO AVOID UNCAUGHT REFERENCE ERRORS)
 function escapeHtml(value) {
   const div = document.createElement("div");
   div.textContent = value || "";
@@ -308,7 +308,6 @@ let lastUpdatedTime = null;
 let cachedLiveMapData = [];
 let favoriteLines = new Set(JSON.parse(localStorage.getItem("tfl_fav_lines") || "[]"));
 
-// EMBEDDED SCHEDULE DATA FROM TFL PLANNED TRACK CLOSURES PDF
 const PLANNED_SCHEDULE = [
   { line: "district", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Turnham Green to Richmond" },
   { line: "dlr", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Tower Gateway to Shadwell" },
@@ -369,28 +368,30 @@ const LINE_COLORS = {
   "waterloo-city": { var: "var(--color-waterloo-city)", text: "#111", hex: "#95CDBA", code: "W&C" },
   "dlr": { var: "var(--color-dlr)", text: "#fff", hex: "#00A4A6", code: "DLR" },
   "london-overground": { var: "var(--color-london-overground)", text: "#fff", hex: "#EE7C0E", code: "Ovg" },
-  "elizabeth": { var: "var(--color-elizabeth)", text: "#fff", hex: "#6950A1", code: "Liz" }
+  "elizabeth": { var: "var(--color-elizabeth)", text: "#fff", hex: "#6950A1", code: "Liz" },
+  "national-rail": { var: "var(--color-national-rail)", text: "#fff", hex: "#d2172a", code: "NR" }
 };
 
 const INTERCHANGE_DIRECTORY = {
   "Oxford Circus": ["bakerloo", "central", "victoria"],
-  "King's Cross St Pancras": ["circle", "hammersmith-city", "metropolitan", "northern", "piccadilly", "victoria"],
+  "King's Cross St Pancras": ["circle", "hammersmith-city", "metropolitan", "northern", "piccadilly", "victoria", "national-rail"],
   "Baker Street": ["bakerloo", "circle", "hammersmith-city", "jubilee", "metropolitan"],
-  "Waterloo": ["bakerloo", "jubilee", "northern", "waterloo-city"],
-  "Victoria": ["circle", "district", "victoria"],
+  "Waterloo": ["bakerloo", "jubilee", "northern", "waterloo-city", "national-rail"],
+  "Victoria": ["circle", "district", "victoria", "national-rail"],
   "Bank": ["central", "northern", "waterloo-city", "dlr"],
-  "Stratford": ["central", "jubilee", "elizabeth", "london-overground", "dlr"],
-  "Paddington": ["bakerloo", "circle", "district", "hammersmith-city", "elizabeth"],
-  "Liverpool Street": ["central", "circle", "hammersmith-city", "metropolitan", "elizabeth", "london-overground"],
+  "Stratford": ["central", "jubilee", "elizabeth", "london-overground", "dlr", "national-rail"],
+  "Paddington": ["bakerloo", "circle", "district", "hammersmith-city", "elizabeth", "national-rail"],
+  "Liverpool Street": ["central", "circle", "hammersmith-city", "metropolitan", "elizabeth", "london-overground", "national-rail"],
   "Green Park": ["jubilee", "piccadilly", "victoria"],
-  "Euston": ["northern", "victoria", "london-overground"],
-  "London Bridge": ["jubilee", "northern"],
+  "Euston": ["northern", "victoria", "london-overground", "national-rail"],
+  "London Bridge": ["jubilee", "northern", "national-rail"],
   "Embankment": ["bakerloo", "circle", "district", "northern"],
   "Holborn": ["central", "piccadilly"],
   "Tottenham Court Road": ["central", "northern", "elizabeth"],
   "Whitechapel": ["district", "hammersmith-city", "elizabeth", "london-overground"]
 };
 
+// COMPREHENSIVE TREE ROUTE DEFINITIONS INCLUDING ALL OVERGROUND SUB-LINES
 const LINE_TREES = {
   "central": {
     junctions: [
@@ -525,7 +526,7 @@ function getInterchangeBadgesHtml(currentLineId, stationName) {
 }
 
 function renderSVGTreeDiagram(lineId, stationStatuses) {
-  const lineConf = LINE_COLORS[lineId] || { hex: "#555555" };
+  const lineConf = LINE_COLORS[lineId] || { hex: "#EE7C0E" };
   const baseColor = lineConf.hex;
 
   if (!LINE_TREES[lineId]) {
@@ -535,7 +536,7 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
     const rowHeight = 32;
     const svgHeight = route.length * rowHeight + 20;
 
-    let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 340 ${svgHeight}">`;
+    let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 360 ${svgHeight}">`;
 
     svgHtml += `<line x1="20" y1="20" x2="20" y2="${(route.length - 1) * rowHeight + 20}" stroke="${baseColor}" stroke-width="4" opacity="0.4" />`;
 
@@ -552,8 +553,13 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
         dotFill = "var(--status-severe)"; dotStroke = "var(--status-severe)"; textFill = "var(--status-severe)";
       }
 
+      const icBadges = getInterchangeBadgesHtml(lineId, st);
+
       svgHtml += `<circle cx="20" cy="${y}" r="6" fill="${dotFill}" stroke="${dotStroke}" stroke-width="3" />`;
       svgHtml += `<text x="36" y="${y + 4}" fill="${textFill}" font-size="12" font-weight="${status ? 'bold' : 'normal'}">${escapeHtml(st)}${tagHtml}</text>`;
+      if (icBadges) {
+        svgHtml += `<foreignObject x="210" y="${y - 10}" width="140" height="20">${icBadges}</foreignObject>`;
+      }
     });
 
     svgHtml += `</svg>`;
@@ -573,7 +579,7 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
   const svgHeight = totalRows * rowHeight + 40;
   let currY = 20;
 
-  let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 400 ${svgHeight}">`;
+  let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 420 ${svgHeight}">`;
 
   tree.trunk.forEach((st, i) => {
     const y = currY;
@@ -586,8 +592,13 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
     if (status === "closed") { dotFill = "var(--status-closed)"; dotStroke = "var(--status-closed)"; textFill = "var(--status-closed)"; }
     else if (status === "planned") { dotFill = "var(--status-planned)"; dotStroke = "var(--status-planned)"; textFill = "var(--status-planned)"; }
 
+    const icBadges = getInterchangeBadgesHtml(lineId, st);
+
     svgHtml += `<circle cx="30" cy="${y}" r="6" fill="${dotFill}" stroke="${dotStroke}" stroke-width="3" />`;
     svgHtml += `<text x="46" y="${y + 4}" fill="${textFill}" font-size="12" font-weight="${status ? 'bold' : 'normal'}">${escapeHtml(st)}</text>`;
+    if (icBadges) {
+      svgHtml += `<foreignObject x="230" y="${y - 10}" width="160" height="20">${icBadges}</foreignObject>`;
+    }
     currY += rowHeight;
   });
 
@@ -744,7 +755,6 @@ function closeLineDetailView() {
   loadStatus();
 }
 
-// REORGANIZED CATEGORIES: UNDERGROUND/RAIL VS OVERGROUND
 function renderNetworkMap(data) {
   const results = document.getElementById("results");
 
