@@ -267,7 +267,7 @@
       <p>TfL's service updates can sometimes feel like a puzzle. This tool cuts through the noise and shows you exactly what's happening on your route using simple, interactive line diagrams.</p>
 
       <h3>🗺️ Network Map</h3>
-      <p>Your main dashboard. It breaks down London's transport network into clear groups—Underground, Overground, Elizabeth Line, and DLR. Tap on any line to see a visual map that forks at real junctions, showing you which branches are running smoothly and which ones are stuck.</p>
+      <p>Your main dashboard. It breaks down London's transport network into clear groups—Underground & Rail lines and London Overground lines. Tap on any line to see a visual map that forks at real junctions.</p>
 
       <h3>🔴 Live Status</h3>
       <p>A quick-glance list of every line, automatically sorted so any line with delays or closures pops to the top. Interchange badges show connecting lines at major stations.</p>
@@ -279,7 +279,6 @@
 </div>
 
 <script>
-// UTILITY HELPERS (DECLARED FIRST TO PREVENT REFERENCE ERRORS)
 function escapeHtml(value) {
   const div = document.createElement("div");
   div.textContent = value || "";
@@ -294,7 +293,6 @@ let lastUpdatedTime = null;
 let cachedLiveMapData = [];
 let favoriteLines = new Set(JSON.parse(localStorage.getItem("tfl_fav_lines") || "[]"));
 
-// EMBEDDED SCHEDULE DATA FROM TFL PLANNED TRACK CLOSURES PDF
 const PLANNED_SCHEDULE = [
   { line: "district", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Turnham Green to Richmond" },
   { line: "dlr", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Tower Gateway to Shadwell" },
@@ -377,6 +375,7 @@ const INTERCHANGE_DIRECTORY = {
   "Whitechapel": ["district", "hammersmith-city", "elizabeth", "london-overground"]
 };
 
+// COMPREHENSIVE TREE ROUTE DEFINITIONS INCLUDING OVERGROUND & WINDRUSH BRANCHES
 const LINE_TREES = {
   "central": {
     junctions: [
@@ -401,8 +400,8 @@ const LINE_TREES = {
   },
   "london-overground": {
     junctions: [
-      { name: "Highbury & Islington", splits: [["Canonbury", "Dalston Junction", "Haggerston", "Hoxton", "Shoreditch High Street", "Whitechapel", "Shadwell", "Wapping", "Rotherhithe", "Canada Water", "Surrey Quays", "New Cross Gate", "Brockley", "Honor Oak Park", "Forest Hill", "Sydenham", "Crystal Palace", "West Croydon"], ["Caledonian Road & Barnsbury", "Camden Road", "Kentish Town West", "Gospel Oak", "Hampstead Heath", "Finchley Road & Frognal", "West Hampstead", "Brondesbury", "Brondesbury Park", "Kensal Rise", "Willesden Junction", "Acton Central", "South Acton", "Gunnersbury", "Kew Gardens", "Richmond"]] },
-      { name: "Gospel Oak", splits: [["Upper Holloway", "Crouch Hill", "Harringay Green Lanes", "Blackhorse Road", "Walthamstow Queen's Road", "Leyton Midland Road", "Leytonstone High Road", "Wanstead Park", "Woodgrange Park", "Barking", "Barking Riverside"]] }
+      { name: "Surrey Quays", splits: [["New Cross Gate", "Brockley", "Honor Oak Park", "Forest Hill", "Sydenham", "Crystal Palace", "Penge West", "Anerley", "Norwood Junction", "West Croydon"], ["Queens Road Peckham", "Peckham Rye", "Denmark Hill", "Clapham High Street", "Wandsworth Road", "Clapham Junction"]] },
+      { name: "Highbury & Islington", splits: [["Canonbury", "Dalston Junction", "Haggerston", "Hoxton", "Shoreditch High Street", "Whitechapel", "Shadwell", "Wapping", "Rotherhithe", "Canada Water", "Surrey Quays"], ["Caledonian Road & Barnsbury", "Camden Road", "Kentish Town West", "Gospel Oak", "Hampstead Heath", "Finchley Road & Frognal", "West Hampstead", "Brondesbury", "Brondesbury Park", "Kensal Rise", "Willesden Junction", "Acton Central", "South Acton", "Gunnersbury", "Kew Gardens", "Richmond"]] }
     ],
     trunk: ["Highbury & Islington", "Canonbury", "Dalston Kingsland", "Hackney Central", "Homerton", "Hackney Wick", "Stratford"]
   },
@@ -426,30 +425,6 @@ const LINE_ROUTES = {
   "waterloo-city": ["Waterloo", "Bank"],
   "dlr": ["Bank", "Tower Gateway", "Shadwell", "Limehouse", "Westferry", "Poplar", "Blackwall", "East India", "Canning Town", "West Silvertown", "Pontoon Dock", "London City Airport", "King George V", "Woolwich Arsenal", "Canary Wharf", "Heron Quays", "South Quay", "Crossharbour", "Mudchute", "Island Gardens", "Cutty Sark", "Greenwich", "Deptford Bridge", "Elverson Road", "Lewisham", "Stratford", "Stratford High Street", "Stratford International"]
 };
-
-function cleanStationName(str) {
-  return str.toLowerCase().replace(/\s*(station|underground station|rail station|line)\s*/gi, '').trim();
-}
-
-function toggleFavorite(lineId) {
-  if (favoriteLines.has(lineId)) {
-    favoriteLines.delete(lineId);
-  } else {
-    favoriteLines.add(lineId);
-  }
-  localStorage.setItem("tfl_fav_lines", JSON.stringify(Array.from(favoriteLines)));
-  loadStatus();
-}
-
-function classify(statusText) {
-  const lower = (statusText || "").toLowerCase();
-  if (lower.includes("good")) return { type: "good", label: "Good service" };
-  if (lower.includes("planned") || lower.includes("work")) return { type: "planned", label: statusText };
-  if (lower.includes("no service") || lower.includes("suspended") || lower.includes("part closure") || lower.includes("closure")) return { type: "closed", label: statusText };
-  if (lower.includes("severe")) return { type: "severe", label: statusText };
-  if (lower.includes("minor") || lower.includes("delays") || lower.includes("reduced")) return { type: "minor", label: statusText };
-  return { type: "minor", label: statusText || "Unknown" };
-}
 
 function evaluateStationStatuses(lineId, lineStatuses) {
   const stationStatuses = new Map();
@@ -754,23 +729,19 @@ function closeLineDetailView() {
   loadStatus();
 }
 
+// RENDER REORGANIZED NETWORK MAP GRID
 function renderNetworkMap(data) {
   const results = document.getElementById("results");
 
+  // Re-grouped into Underground/Rail vs Overground
   const modeGroups = {
-    tube: { title: "London Underground", lines: [] },
-    overground: { title: "London Overground", lines: [] },
-    elizabeth: { title: "Elizabeth Line", lines: [] },
-    dlr: { title: "DLR & Trams", lines: [] }
+    tube: { title: "London Underground & Rail", lines: [] },
+    overground: { title: "London Overground Lines", lines: [] }
   };
 
   data.forEach(line => {
     if (line.id === "london-overground") {
       modeGroups.overground.lines.push(line);
-    } else if (line.id === "elizabeth") {
-      modeGroups.elizabeth.lines.push(line);
-    } else if (line.id === "dlr" || line.id === "tram") {
-      modeGroups.dlr.lines.push(line);
     } else {
       modeGroups.tube.lines.push(line);
     }
