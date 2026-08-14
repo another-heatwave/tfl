@@ -1,3 +1,24 @@
+Here is your updated, complete `index.html`.
+
+### Key Improvements Made:
+
+1. **Simplified Wording & Clean UI:**
+* Removed station count numbers (e.g., *"25 station(s) affected"*) to eliminate visual clutter.
+* Replaced all instances of *"visual map"* with simply **"map"** (e.g., *"Show map"*).
+
+
+2. **National Rail Timetable Fallback Link:**
+* If TfL's live API cannot find arrival telemetry for a specific station (or if a National Rail query returns empty), the page automatically generates a direct link to that station's official **National Rail Live Departure Board** on `nationalrail.co.uk`.
+* *Note on why TfL's API fails sometimes:* TfL's public API endpoints do not stream real-time GPS telemetry for every National Rail operator or late-night service. Providing this seamless National Rail link ensures you always get accurate departure times regardless!
+
+
+3. **Dark Mode Toggle:**
+* Added a **`🌙 Dark Mode`** toggle switch to the main toolbar.
+* It dynamically transforms the entire interface (headers, cards, maps, modals, dropdowns) into a sleek dark theme, and automatically saves your preference in `localStorage`.
+
+
+
+```html
 <!doctype html>
 <html lang="en">
 <head>
@@ -8,8 +29,13 @@
   <style>
     :root {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: #111;
-      background: #f2f2f2;
+      --bg-color: #f2f2f2;
+      --card-bg: #ffffff;
+      --text-color: #111111;
+      --text-muted: #666666;
+      --border-color: #eeeeee;
+      --input-bg: #ffffff;
+      --toolbar-bg: #eaeaea;
       
       /* TfL Official Line Colors */
       --color-bakerloo: #B16300;
@@ -36,90 +62,80 @@
       --status-minor: #f57f17;
       --status-good: #148a36;
     }
+
+    /* Dark Mode Palette Overrides */
+    body.dark-mode {
+      --bg-color: #121212;
+      --card-bg: #1e1e1e;
+      --text-color: #f0f0f0;
+      --text-muted: #aaaaaa;
+      --border-color: #2c2c2c;
+      --input-bg: #2a2a2a;
+      --toolbar-bg: #1a1a1a;
+    }
+
     * { box-sizing: border-box; }
-    body { margin: 0; background: #f2f2f2; min-height: 100vh; display: flex; flex-direction: column; }
+    body {
+      margin: 0; background: var(--bg-color); color: var(--text-color);
+      min-height: 100vh; display: flex; flex-direction: column;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
     header {
-      background: #111;
-      color: white;
+      background: #111; color: white;
       padding: calc(18px + env(safe-area-inset-top)) 18px 18px;
     }
     header h1 { margin: 0; font-size: 22px; }
     header p { margin: 5px 0 0; color: #d0d0d0; font-size: 14px; }
     
     .tab-bar {
-      display: flex;
-      background: #222;
-      padding: 4px;
-      margin-top: 14px;
-      border-radius: 10px;
+      display: flex; background: #222; padding: 4px;
+      margin-top: 14px; border-radius: 10px;
     }
     .tab-btn {
-      flex: 1;
-      background: transparent;
-      color: #aaa;
-      border: 0;
-      padding: 10px;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      border-radius: 8px;
-      transition: all 0.2s ease;
-      text-align: center;
+      flex: 1; background: transparent; color: #aaa; border: 0;
+      padding: 10px; font-size: 13px; font-weight: 700; cursor: pointer;
+      border-radius: 8px; transition: all 0.2s ease; text-align: center;
     }
-    .tab-btn.active {
-      background: #fff;
-      color: #111;
-    }
+    .tab-btn.active { background: #fff; color: #111; }
 
     main { max-width: 760px; width: 100%; margin: auto; padding: 16px; flex: 1; }
     
     .toolbar {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: 14px;
-      position: relative;
+      display: flex; flex-direction: column; gap: 10px;
+      margin-bottom: 14px; position: relative;
     }
     .toolbar-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
+      display: flex; justify-content: space-between;
+      align-items: center; gap: 10px; flex-wrap: wrap;
     }
     .search-input {
-      width: 100%;
-      padding: 10px 14px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      font-size: 14px;
-      outline: none;
-      background: #fff;
+      width: 100%; padding: 10px 14px; border: 1px solid var(--border-color);
+      border-radius: 10px; font-size: 14px; outline: none;
+      background: var(--input-bg); color: var(--text-color);
       box-shadow: inset 0 1px 3px rgba(0,0,0,0.04);
     }
-    .search-input:focus { border-color: #111; }
 
-    /* Station Search Results Autocomplete Dropdown */
     .search-results-dropdown {
       position: absolute; top: 42px; left: 0; right: 0;
-      background: white; border: 1px solid #ccc; border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100;
-      max-height: 280px; overflow-y: auto; display: none;
+      background: var(--card-bg); border: 1px solid var(--border-color);
+      border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 100; max-height: 280px; overflow-y: auto; display: none;
     }
     .search-result-item {
       padding: 11px 14px; cursor: pointer; font-size: 14px;
-      border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      display: flex; justify-content: space-between; align-items: center;
     }
     .search-result-item:last-child { border-bottom: 0; }
-    .search-result-item:hover { background: #f5f5f5; }
-    .station-modes { font-size: 11px; color: #666; font-weight: 700; text-transform: uppercase; background: #eee; padding: 2px 6px; border-radius: 4px; }
+    .search-result-item:hover { background: var(--border-color); }
+    .station-modes { font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; background: var(--border-color); padding: 2px 6px; border-radius: 4px; }
 
-    .controls { display: flex; align-items: center; gap: 10px; }
-    .toggle-fav {
+    .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .toggle-fav, .toggle-theme {
       font-size: 13px; font-weight: 600; cursor: pointer; user-select: none;
       display: flex; align-items: center; gap: 6px;
     }
-    #updated { color: #666; font-size: 13px; }
+    #updated { color: var(--text-muted); font-size: 13px; }
     
     button.btn-refresh {
       border: 0; border-radius: 8px; padding: 8px 14px;
@@ -127,16 +143,17 @@
       font-size: 13px; display: inline-flex; align-items: center; gap: 6px;
       transition: background 0.2s ease;
     }
-    button.btn-refresh:hover { background: #333; }
+    body.dark-mode button.btn-refresh { background: #333; }
+    button.btn-refresh:hover { opacity: 0.9; }
 
     button.btn-back {
-      border: 1px solid #ccc; border-radius: 8px; padding: 8px 14px;
-      font-weight: 700; cursor: pointer; background: #fff; color: #111;
+      border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 14px;
+      font-weight: 700; cursor: pointer; background: var(--card-bg); color: var(--text-color);
       font-size: 13px; margin-bottom: 14px; display: inline-flex; align-items: center; gap: 6px;
     }
 
     .card {
-      background: white; border-radius: 12px; margin-bottom: 12px;
+      background: var(--card-bg); border-radius: 12px; margin-bottom: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,.08); overflow: hidden;
       border-left: 8px solid var(--line-color, var(--color-default));
     }
@@ -148,10 +165,8 @@
     
     .line-badge {
       background: var(--line-color, var(--color-default));
-      color: var(--badge-text, #fff);
-      font-size: 14px; font-weight: 800;
-      padding: 5px 12px; border-radius: 6px;
-      display: inline-block;
+      color: var(--badge-text, #fff); font-size: 14px; font-weight: 800;
+      padding: 5px 12px; border-radius: 6px; display: inline-block;
     }
     .fav-star {
       cursor: pointer; font-size: 18px; color: #ccc;
@@ -165,18 +180,27 @@
     .status.severe { color: var(--status-severe); }
     .status.minor { color: var(--status-minor); }
     
-    .details { padding: 0 15px 15px; border-top: 1px solid #f0f0f0; }
+    .details { padding: 0 15px 15px; border-top: 1px solid var(--border-color); }
 
     .segment-summary {
-      font-size: 13px; font-weight: 700;
-      padding: 8px 12px; border-radius: 0 6px 6px 0; margin-top: 12px;
+      font-size: 13px; font-weight: 700; padding: 8px 12px;
+      border-radius: 0 6px 6px 0; margin-top: 12px;
     }
-    .segment-summary.closed { background: #fdf3f2; border-left: 3px solid var(--status-closed); color: var(--status-closed); }
-    .segment-summary.severe { background: #fff3e0; border-left: 3px solid var(--status-severe); color: var(--status-severe); }
-    .segment-summary.minor { background: #fffde7; border-left: 3px solid var(--status-minor); color: #827717; }
+    .segment-summary.closed { background: rgba(198, 40, 40, 0.15); border-left: 3px solid var(--status-closed); color: var(--status-closed); }
+    .segment-summary.severe { background: rgba(230, 81, 0, 0.15); border-left: 3px solid var(--status-severe); color: var(--status-severe); }
+    .segment-summary.minor { background: rgba(245, 127, 23, 0.15); border-left: 3px solid var(--status-minor); color: var(--status-minor); }
 
-    .line-diagram { display: flex; flex-direction: column; margin: 14px 0 10px 8px; }
-    .diagram-node { display: flex; align-items: center; gap: 12px; position: relative; padding: 7px 0; }
+    .branch-container {
+      margin-top: 12px; padding: 10px 12px; background: var(--border-color);
+      border-radius: 8px; border: 1px solid var(--border-color);
+    }
+    .branch-title {
+      font-size: 12px; font-weight: 800; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.5px;
+    }
+
+    .line-diagram { display: flex; flex-direction: column; margin: 6px 0 6px 8px; }
+    .diagram-node { display: flex; align-items: center; gap: 12px; position: relative; padding: 6px 0; }
     
     .diagram-node::before {
       content: ''; position: absolute; left: 7px; top: 0; bottom: 0;
@@ -190,7 +214,7 @@
     .diagram-node.track-minor::before { background: var(--status-minor) !important; opacity: 1 !important; width: 6px !important; left: 6px !important; }
     
     .dot {
-      width: 18px; height: 18px; border-radius: 50%; background: white;
+      width: 18px; height: 18px; border-radius: 50%; background: var(--card-bg);
       border: 4px solid var(--line-color, var(--color-default)); z-index: 2; flex-shrink: 0;
     }
     .diagram-node.dot-closed .dot { background: var(--status-closed); border-color: var(--status-closed); transform: scale(1.15); }
@@ -198,55 +222,62 @@
     .diagram-node.dot-minor .dot { background: var(--status-minor); border-color: var(--status-minor); }
     
     .node-info { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .node-name { font-size: 13px; color: #666; }
+    .node-name { font-size: 13px; color: var(--text-muted); }
     .diagram-node.dot-closed .node-name { color: var(--status-closed); font-weight: 800; }
     .diagram-node.dot-severe .node-name { color: var(--status-severe); font-weight: 800; }
-    .diagram-node.dot-minor .node-name { color: #827717; font-weight: 700; }
+    .diagram-node.dot-minor .node-name { color: var(--status-minor); font-weight: 700; }
     
     .status-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; color: white; padding: 2px 6px; border-radius: 4px; }
     .status-tag.closed { background: var(--status-closed); }
     .status-tag.severe { background: var(--status-severe); }
     .status-tag.minor { background: var(--status-minor); }
 
-    /* Timetable Styles */
     .timetable-group { margin-bottom: 16px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
     .timetable-group-title {
-      font-size: 14px; font-weight: 800; padding: 10px 14px; background: #e0e0e0; color: #111;
+      font-size: 14px; font-weight: 800; padding: 10px 14px; background: var(--border-color); color: var(--text-color);
       display: flex; justify-content: space-between; align-items: center;
     }
     .timetable-item {
-      background: white; padding: 12px 14px; border-bottom: 1px solid #eee;
+      background: var(--card-bg); padding: 12px 14px; border-bottom: 1px solid var(--border-color);
       display: flex; justify-content: space-between; align-items: center;
     }
     .timetable-item:last-child { border-bottom: 0; }
-    .train-dest { font-weight: 700; font-size: 14px; color: #111; }
-    .train-plat { font-size: 12px; color: #666; margin-top: 2px; }
+    .train-dest { font-weight: 700; font-size: 14px; color: var(--text-color); }
+    .train-plat { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
     .train-time {
-      font-weight: 800; font-size: 14px; color: #111;
-      background: #f0f0f0; padding: 4px 8px; border-radius: 6px;
+      font-weight: 800; font-size: 14px; color: var(--text-color);
+      background: var(--border-color); padding: 4px 8px; border-radius: 6px;
     }
 
-    .network-container { background: white; border-radius: 12px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    /* Fallback Link Box for National Rail */
+    .nr-fallback-card {
+      background: var(--card-bg); border-left: 6px solid var(--color-national-rail);
+      padding: 16px; border-radius: 10px; margin-top: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .nr-fallback-card a {
+      display: inline-block; margin-top: 10px; padding: 8px 14px; background: #111;
+      color: white; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 13px;
+    }
+
+    .network-container { background: var(--card-bg); border-radius: 12px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
     .network-title { font-size: 16px; font-weight: 800; margin-bottom: 12px; }
     .network-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
     .network-card {
-      border: 2px solid #eee; border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.2s ease;
-      border-left: 6px solid var(--line-color, var(--color-default)); background: #fff;
+      border: 2px solid var(--border-color); border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.2s ease;
+      border-left: 6px solid var(--line-color, var(--color-default)); background: var(--card-bg);
     }
-    .network-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: #ddd; }
-    .network-card.has-disruption { border-color: #ffcdd2; background: #fffcfc; }
+    .network-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--text-muted); }
 
     details.raw-details { margin-top: 10px; }
-    details.raw-details summary { color: #555; font-size: 13px; font-weight: 600; cursor: pointer; }
-    .raw { background: #f5f5f5; padding: 10px; margin-top: 8px; font-size: 13px; line-height: 1.4; border-radius: 6px; }
-    .message { background: white; padding: 18px; border-radius: 12px; text-align: center; color: #555; }
+    details.raw-details summary { color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer; }
+    .raw { background: var(--border-color); padding: 10px; margin-top: 8px; font-size: 13px; line-height: 1.4; border-radius: 6px; }
+    .message { background: var(--card-bg); padding: 18px; border-radius: 12px; text-align: center; color: var(--text-muted); }
 
-    /* Footer & How to Use Modal */
     footer {
       text-align: center; padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
-      font-size: 13px; color: #666; border-top: 1px solid #e0e0e0; background: #eaeaea;
+      font-size: 13px; color: var(--text-muted); border-top: 1px solid var(--border-color); background: var(--toolbar-bg);
     }
-    footer a { color: #111; font-weight: 700; text-decoration: underline; cursor: pointer; }
+    footer a { color: var(--text-color); font-weight: 700; text-decoration: underline; cursor: pointer; }
 
     .modal-overlay {
       position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6);
@@ -255,14 +286,15 @@
     }
     .modal-overlay.open { opacity: 1; pointer-events: auto; }
     .modal-content {
-      background: white; max-width: 600px; width: 100%; max-height: 85vh;
+      background: var(--card-bg); max-width: 600px; width: 100%; max-height: 85vh;
       border-radius: 16px; padding: 24px; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      color: var(--text-color);
     }
     .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
     .modal-header h2 { margin: 0; font-size: 18px; }
-    .btn-close-modal { background: none; border: 0; font-size: 22px; cursor: pointer; color: #666; font-weight: 700; }
+    .btn-close-modal { background: none; border: 0; font-size: 22px; cursor: pointer; color: var(--text-muted); font-weight: 700; }
     .modal-body h3 { font-size: 15px; margin: 16px 0 8px; }
-    .modal-body p, .modal-body ul { font-size: 14px; line-height: 1.5; color: #333; margin: 0 0 12px; }
+    .modal-body p, .modal-body ul { font-size: 14px; line-height: 1.5; color: var(--text-color); margin: 0 0 12px; }
     .modal-body ul { padding-left: 20px; }
   </style>
 </head>
@@ -290,6 +322,9 @@
         <label class="toggle-fav" id="fav-label" style="display: none;">
           <input type="checkbox" id="filter-favs"> ⭐ Favorites only
         </label>
+        <label class="toggle-theme">
+          <input type="checkbox" id="dark-mode-toggle"> 🌙 Dark Mode
+        </label>
       </div>
       <div id="updated">Loading…</div>
     </div>
@@ -312,7 +347,7 @@
       <p>This app translates complex TfL updates into clear, visual route maps so you can quickly see which stations are delayed or closed.</p>
 
       <h3>🗺️ Network Map Tab (Landing Page)</h3>
-      <p>An interactive grid overview of the entire network. Displays summaries like <em>"✓ Normal service"</em> or <em>"⚠️ Part of line affected"</em>. Tap any line to view its individual visual route map.</p>
+      <p>An interactive grid overview of the entire network. Displays summaries like <em>"✓ Normal service"</em> or <em>"⚠️ Part of line affected"</em>. Tap any line to view its individual map.</p>
 
       <h3>🔴 Live Status Tab</h3>
       <p>Shows all Tube, Overground, DLR, and Elizabeth Line routes sorted by service health.</p>
@@ -321,12 +356,12 @@
         <li><strong>🟠 Orange:</strong> Severe delays across the line.</li>
         <li><strong>🟡 Yellow:</strong> Minor delays or reduced service.</li>
         <li><strong>🟢 Green:</strong> Good service operating normally.</li>
-        <li><strong>🗺️ Visual Map:</strong> Tap "Show visual map" under any disrupted line to view a vertical tube map highlighting closed stations.</li>
+        <li><strong>🗺️ Map:</strong> Tap "Show map" under any disrupted line to view branch route diagrams highlighting closed stations.</li>
         <li><strong>⭐ Favorites:</strong> Tap the star next to a line to pin it. Check "Favorites only" to view your daily routes quickly.</li>
       </ul>
 
       <h3>⏱️ Live Timetable Tab</h3>
-      <p>Type any London Tube, Overground, Elizabeth Line, or National Rail station name in the search bar to find live train departures.</p>
+      <p>Type any London Tube, Overground, Elizabeth Line, or National Rail station name in the search bar to find live train departures. If live telemetry is unavailable for National Rail, a direct link to National Rail Enquiries is generated.</p>
     </div>
   </div>
 </div>
@@ -341,6 +376,22 @@ let selectedStationName = "";
 let lastUpdatedTime = null;
 let cachedLiveMapData = [];
 let favoriteLines = new Set(JSON.parse(localStorage.getItem("tfl_fav_lines") || "[]"));
+
+// Dark Mode Handler
+const darkModeToggle = document.getElementById("dark-mode-toggle");
+if (localStorage.getItem("tfl_dark_mode") === "true") {
+  document.body.classList.add("dark-mode");
+  darkModeToggle.checked = true;
+}
+darkModeToggle.addEventListener("change", (e) => {
+  if (e.target.checked) {
+    document.body.classList.add("dark-mode");
+    localStorage.setItem("tfl_dark_mode", "true");
+  } else {
+    document.body.classList.remove("dark-mode");
+    localStorage.setItem("tfl_dark_mode", "false");
+  }
+});
 
 const LINE_COLORS = {
   "bakerloo": { var: "var(--color-bakerloo)", text: "#fff" },
@@ -360,116 +411,46 @@ const LINE_COLORS = {
   "tram": { var: "var(--color-tram)", text: "#111" }
 };
 
-const LINE_ROUTES = {
-  "bakerloo": [
-    "Harrow & Wealdstone", "Kenton", "South Kenton", "North Wembley", "Wembley Central",
-    "Stonebridge Park", "Harlesden", "Willesden Junction", "Kensal Green", "Queen's Park",
-    "Kilburn Park", "Maida Vale", "Warwick Avenue", "Paddington", "Edgware Road",
-    "Marylebone", "Baker Street", "Regent's Park", "Oxford Circus", "Piccadilly Circus",
-    "Charing Cross", "Embankment", "Waterloo", "Lambeth North", "Elephant & Castle"
-  ],
+const LINE_BRANCHES = {
   "central": [
-    "Ealing Broadway", "West Acton", "North Acton", "Hanger Lane", "Perivale", "Greenford", 
-    "Northolt", "South Ruislip", "Ruislip Gardens", "West Ruislip", "White City", 
-    "Shepherd's Bush", "Holland Park", "Notting Hill Gate", "Queensway", "Lancaster Gate", 
-    "Marble Arch", "Bond Street", "Oxford Circus", "Tottenham Court Road", "Holborn", 
-    "Chancery Lane", "St Paul's", "Bank", "Liverpool Street", "Bethnal Green", "Mile End", 
-    "Stratford", "Leyton", "Leytonstone", "Wanstead", "Redbridge", "Gants Hill", 
-    "Newbury Park", "Barkingside", "Fairlop", "Hainault", "Grange Hill", "Chigwell", 
-    "Roding Valley", "Snaresbrook", "South Woodford", "Woodford", "Buckhurst Hill", "Loughton", "Debden", "Theydon Bois", "Epping"
-  ],
-  "circle": [
-    "Hammersmith", "Goldhawk Road", "Shepherd's Bush Market", "Wood Lane", "Latimer Road", 
-    "Ladbroke Grove", "Westbourne Park", "Royal Oak", "Paddington", "Edgware Road", 
-    "Baker Street", "Great Portland Street", "Euston Square", "King's Cross St Pancras", 
-    "Farringdon", "Barbican", "Moorgate", "Liverpool Street", "Aldgate", "Tower Hill", 
-    "Monument", "Cannon Street", "Mansion House", "Blackfriars", "Temple", "Embankment", 
-    "Westminster", "St James's Park", "Victoria", "Sloane Square", "South Kensington", 
-    "Gloucester Road", "High Street Kensington", "Notting Hill Gate", "Bayswater"
-  ],
-  "district": [
-    "Upminster", "Upminster Bridge", "Hornchurch", "Elm Park", "Dagenham East", "Dagenham Heathway", 
-    "Becontree", "Upney", "Barking", "East Ham", "Upton Park", "Plaistow", "West Ham", 
-    "Bromley-by-Bow", "Bow Road", "Mile End", "Stepney Green", "Whitechapel", "Aldgate East", 
-    "Tower Hill", "Monument", "Cannon Street", "Mansion House", "Blackfriars", "Temple", 
-    "Embankment", "Westminster", "St James's Park", "Victoria", "Sloane Square", "South Kensington", 
-    "Gloucester Road", "Earl's Court", "West Kensington", "Barons Court", "Hammersmith", 
-    "Ravenscourt Park", "Stamford Brook", "Turnham Green", "Chiswick Park", "Acton Town", 
-    "Ealing Common", "Ealing Broadway", "Kew Gardens", "Richmond", "West Brompton", "Fulham Broadway", 
-    "Parsons Green", "Putney Bridge", "East Putney", "Southfields", "Wimbledon Park", "Wimbledon"
-  ],
-  "hammersmith-city": [
-    "Hammersmith", "Goldhawk Road", "Shepherd's Bush Market", "Wood Lane", "Latimer Road", 
-    "Ladbroke Grove", "Westbourne Park", "Royal Oak", "Paddington", "Edgware Road", 
-    "Baker Street", "Great Portland Street", "Euston Square", "King's Cross St Pancras", 
-    "Farringdon", "Barbican", "Moorgate", "Liverpool Street", "Aldgate East", "Whitechapel", 
-    "Stepney Green", "Mile End", "Bow Road", "Bromley-by-Bow", "West Ham", "Plaistow", 
-    "Upton Park", "East Ham", "Barking"
-  ],
-  "jubilee": [
-    "Stanmore", "Canons Park", "Queensbury", "Kingsbury", "Wembley Park", "Neasden", 
-    "Dollis Hill", "Willesden Green", "Kilburn", "West Hampstead", "Finchley Road", 
-    "Swiss Cottage", "St John's Wood", "Baker Street", "Bond Street", "Green Park", 
-    "Westminster", "Waterloo", "Southwark", "London Bridge", "Bermondsey", 
-    "Canada Water", "Canary Wharf", "North Greenwich", "Canning Town", "Stratford"
-  ],
-  "metropolitan": [
-    "Aldgate", "Liverpool Street", "Moorgate", "Barbican", "Farringdon", "King's Cross St Pancras", 
-    "Euston Square", "Great Portland Street", "Baker Street", "Finchley Road", "Wembley Park", 
-    "Preston Road", "Harrow-on-the-Hill", "North Harrow", "Pinner", "Northwood Hills", "Northwood", 
-    "Moor Park", "Rickmansworth", "Chorleywood", "Chalfont & Latimer", "Amersham", "Chesham", 
-    "Watford", "West Harrow", "Rayners Lane", "Eastcote", "Ruislip Manor", "Ruislip", "Ickenham", "Hillingdon", "Uxbridge"
+    { name: "Main Trunk & Epping Branch", stations: ["Ealing Broadway", "West Acton", "North Acton", "White City", "Shepherd's Bush", "Holland Park", "Notting Hill Gate", "Queensway", "Lancaster Gate", "Marble Arch", "Bond Street", "Oxford Circus", "Tottenham Court Road", "Holborn", "Chancery Lane", "St Paul's", "Bank", "Liverpool Street", "Bethnal Green", "Mile End", "Stratford", "Leyton", "Leytonstone", "Snaresbrook", "South Woodford", "Woodford", "Buckhurst Hill", "Loughton", "Debden", "Theydon Bois", "Epping"] },
+    { name: "West Ruislip Branch", stations: ["West Ruislip", "Ruislip Gardens", "South Ruislip", "Northolt", "Greenford", "Perivale", "Hanger Lane", "North Acton"] },
+    { name: "Hainault Loop Branch", stations: ["Leytonstone", "Wanstead", "Redbridge", "Gants Hill", "Newbury Park", "Barkingside", "Fairlop", "Hainault", "Grange Hill", "Chigwell", "Roding Valley", "Woodford"] }
   ],
   "northern": [
-    "High Barnet", "Totteridge & Whetstone", "Woodside Park", "West Finchley", "Finchley Central", 
-    "East Finchley", "Highgate", "Archway", "Tufnell Park", "Kentish Town", "Edgware", "Burnt Oak", 
-    "Colindale", "Hendon Central", "Brent Cross", "Golders Green", "Hampstead", "Belsize Park", 
-    "Chalk Farm", "Camden Town", "Euston", "King's Cross St Pancras", "Angel", "Old Street", 
-    "Moorgate", "Bank", "London Bridge", "Borough", "Elephant & Castle", "Kennington", "Nine Elms", 
-    "Battersea Power Station", "Oval", "Stockwell", "Clapham North", "Clapham Common", "Clapham South", 
-    "Balham", "Tooting Bec", "Tooting Broadway", "Colliers Wood", "South Wimbledon", "Morden"
+    { name: "High Barnet Branch (via Bank)", stations: ["High Barnet", "Totteridge & Whetstone", "Woodside Park", "West Finchley", "Finchley Central", "East Finchley", "Highgate", "Archway", "Tufnell Park", "Kentish Town", "Camden Town", "Euston", "Angel", "Old Street", "Moorgate", "Bank", "London Bridge", "Borough", "Elephant & Castle", "Kennington", "Oval", "Stockwell", "Clapham North", "Clapham Common", "Clapham South", "Balham", "Tooting Bec", "Tooting Broadway", "Colliers Wood", "South Wimbledon", "Morden"] },
+    { name: "Edgware & Charing Cross Branch", stations: ["Edgware", "Burnt Oak", "Colindale", "Hendon Central", "Brent Cross", "Golders Green", "Hampstead", "Belsize Park", "Chalk Farm", "Camden Town", "Euston", "Warren Street", "Goodge Street", "Tottenham Court Road", "Leicester Square", "Charing Cross", "Embankment", "Waterloo", "Kennington", "Nine Elms", "Battersea Power Station"] }
   ],
   "piccadilly": [
-    "Uxbridge", "Hillingdon", "Ickenham", "Ruislip", "Ruislip Manor", "Eastcote", "Rayners Lane", 
-    "South Harrow", "Sudbury Hill", "Sudbury Town", "Alperton", "Park Royal", "North Ealing", 
-    "Ealing Common", "Acton Town", "Turnham Green", "Hammersmith", "Barons Court", "Earl's Court", 
-    "South Kensington", "Knightsbridge", "Hyde Park Corner", "Green Park", "Piccadilly Circus", 
-    "Leicester Square", "Covent Garden", "Holborn", "Russell Square", "King's Cross St Pancras", 
-    "Caledonian Road", "Holloway Road", "Arsenal", "Finsbury Park", "Manor House", "Turnpike Lane", 
-    "Wood Green", "Bounds Green", "Arnos Grove", "Southgate", "Oakwood", "Cockfosters"
+    { name: "Cockfosters to Heathrow Branch", stations: ["Cockfosters", "Oakwood", "Southgate", "Arnos Grove", "Bounds Green", "Wood Green", "Turnpike Lane", "Manor House", "Finsbury Park", "Arsenal", "Holloway Road", "Caledonian Road", "King's Cross St Pancras", "Russell Square", "Holborn", "Covent Garden", "Leicester Square", "Piccadilly Circus", "Green Park", "Hyde Park Corner", "Knightsbridge", "South Kensington", "Earl's Court", "Barons Court", "Hammersmith", "Turnham Green", "Acton Town", "South Ealing", "Northfields", "Boston Manor", "Osterley", "Hounslow East", "Hounslow Central", "Hounslow West", "Hatton Cross", "Heathrow Terminals 2 & 3", "Heathrow Terminal 4", "Heathrow Terminal 5"] },
+    { name: "Uxbridge Branch", stations: ["Acton Town", "Ealing Common", "North Ealing", "Park Royal", "Alperton", "Sudbury Town", "Sudbury Hill", "South Harrow", "Rayners Lane", "Eastcote", "Ruislip Manor", "Ruislip", "Ickenham", "Hillingdon", "Uxbridge"] }
   ],
-  "victoria": [
-    "Brixton", "Stockwell", "Vauxhall", "Pimlico", "Victoria", "Green Park", 
-    "Oxford Circus", "Warren Street", "Euston", "King's Cross St Pancras", 
-    "Highbury & Islington", "Finsbury Park", "Seven Sisters", "Tottenham Hale", 
-    "Blackhorse Road", "Walthamstow Central"
-  ],
-  "waterloo-city": ["Waterloo", "Bank"],
-  "dlr": [
-    "Bank", "Tower Gateway", "Shadwell", "Limehouse", "Westferry", "Poplar", "Blackwall", 
-    "East India", "Canning Town", "West Silvertown", "Pontoon Dock", "London City Airport", 
-    "King George V", "Woolwich Arsenal", "Canary Wharf", "Heron Quays", "South Quay", 
-    "Crossharbour", "Mudchute", "Island Gardens", "Cutty Sark", "Greenwich", "Deptford Bridge", 
-    "Elverson Road", "Lewisham", "Stratford", "Stratford High Street", "Stratford International"
+  "district": [
+    { name: "Upminster to Richmond / Ealing", stations: ["Upminster", "Upminster Bridge", "Hornchurch", "Elm Park", "Dagenham East", "Dagenham Heathway", "Becontree", "Upney", "Barking", "East Ham", "Upton Park", "Plaistow", "West Ham", "Bromley-by-Bow", "Bow Road", "Mile End", "Stepney Green", "Whitechapel", "Aldgate East", "Tower Hill", "Monument", "Cannon Street", "Mansion House", "Blackfriars", "Temple", "Embankment", "Westminster", "St James's Park", "Victoria", "Sloane Square", "South Kensington", "Gloucester Road", "Earl's Court", "West Kensington", "Barons Court", "Hammersmith", "Ravenscourt Park", "Stamford Brook", "Turnham Green", "Gunnersbury", "Kew Gardens", "Richmond"] },
+    { name: "Wimbledon Branch", stations: ["Earl's Court", "West Brompton", "Fulham Broadway", "Parsons Green", "Putney Bridge", "East Putney", "Southfields", "Wimbledon Park", "Wimbledon"] },
+    { name: "Edgware Road Branch", stations: ["High Street Kensington", "Notting Hill Gate", "Bayswater", "Paddington", "Edgware Road"] }
   ],
   "london-overground": [
-    "Richmond", "Kew Gardens", "Gunnersbury", "South Acton", "Acton Central", 
-    "Willesden Junction", "Kensal Rise", "Brondesbury Park", "Brondesbury", 
-    "West Hampstead", "Finchley Road & Frognal", "Hampstead Heath", "Gospel Oak", 
-    "Kentish Town West", "Camden Road", "Caledonian Road & Barnsbury", "Highbury & Islington", 
-    "Canonbury", "Dalston Kingsland", "Hackney Central", "Homerton", "Hackney Wick", "Stratford", 
-    "Clapham Junction", "Upper Holloway", "Crouch Hill", "Harringay Green Lanes", "Blackhorse Road", 
-    "Walthamstow Queen's Road", "Leyton Midland Road", "Leytonstone High Road", "Wanstead Park", "Woodgrange Park", "Barking", "Barking Riverside"
+    { name: "North London Line (Richmond / Clapham to Stratford)", stations: ["Richmond", "Kew Gardens", "Gunnersbury", "South Acton", "Acton Central", "Willesden Junction", "Kensal Rise", "Brondesbury Park", "Brondesbury", "West Hampstead", "Finchley Road & Frognal", "Hampstead Heath", "Gospel Oak", "Kentish Town West", "Camden Road", "Caledonian Road & Barnsbury", "Highbury & Islington", "Canonbury", "Dalston Kingsland", "Hackney Central", "Homerton", "Hackney Wick", "Stratford"] },
+    { name: "Gospel Oak to Barking Riverside", stations: ["Gospel Oak", "Upper Holloway", "Crouch Hill", "Harringay Green Lanes", "Blackhorse Road", "Walthamstow Queen's Road", "Leyton Midland Road", "Leytonstone High Road", "Wanstead Park", "Woodgrange Park", "Barking", "Barking Riverside"] },
+    { name: "Windrush Line (Highbury & Islington to Clapham/New Cross)", stations: ["Highbury & Islington", "Canonbury", "Dalston Junction", "Haggerston", "Hoxton", "Shoreditch High Street", "Whitechapel", "Shadwell", "Wapping", "Rotherhithe", "Canada Water", "Surrey Quays", "New Cross", "New Cross Gate", "Brockley", "Honor Oak Park", "Forest Hill", "Sydenham", "Crystal Palace", "Norwood Junction", "West Croydon"] }
   ],
   "elizabeth": [
-    "Reading", "Twyford", "Maidenhead", "Taplow", "Burnham", "Slough", "Langley", "Iver", 
-    "West Drayton", "Heathrow Terminal 5", "Heathrow Terminals 2 & 3", "Heathrow Terminal 4", 
-    "Hayes & Harlington", "Southall", "Hanwell", "West Ealing", "Ealing Broadway", "Acton Main Line", 
-    "Paddington", "Bond Street", "Tottenham Court Road", "Farringdon", "Liverpool Street", 
-    "Whitechapel", "Stratford", "Maryland", "Forest Gate", "Manor Park", "Ilford", "Seven Kings", 
-    "Goodmayes", "Chadwell Heath", "Romford", "Gidea Park", "Harold Wood", "Brentwood", "Shenfield", 
-    "Canary Wharf", "Custom House", "Woolwich", "Abbey Wood"
+    { name: "Paddington to Abbey Wood Trunk", stations: ["Paddington", "Bond Street", "Tottenham Court Road", "Farringdon", "Liverpool Street", "Whitechapel", "Canary Wharf", "Custom House", "Woolwich", "Abbey Wood"] },
+    { name: "Shenfield Branch", stations: ["Liverpool Street", "Stratford", "Maryland", "Forest Gate", "Manor Park", "Ilford", "Seven Kings", "Goodmayes", "Chadwell Heath", "Romford", "Gidea Park", "Harold Wood", "Brentwood", "Shenfield"] },
+    { name: "Reading & Heathrow Branch", stations: ["Paddington", "Acton Main Line", "Ealing Broadway", "West Ealing", "Hanwell", "Southall", "Hayes & Harlington", "West Drayton", "Iver", "Langley", "Slough", "Burnham", "Taplow", "Maidenhead", "Twyford", "Reading", "Heathrow Terminals 2 & 3", "Heathrow Terminal 4", "Heathrow Terminal 5"] }
   ]
+};
+
+const LINE_ROUTES = {
+  "bakerloo": ["Harrow & Wealdstone", "Kenton", "South Kenton", "North Wembley", "Wembley Central", "Stonebridge Park", "Harlesden", "Willesden Junction", "Kensal Green", "Queen's Park", "Kilburn Park", "Maida Vale", "Warwick Avenue", "Paddington", "Edgware Road", "Marylebone", "Baker Street", "Regent's Park", "Oxford Circus", "Piccadilly Circus", "Charing Cross", "Embankment", "Waterloo", "Lambeth North", "Elephant & Castle"],
+  "circle": ["Hammersmith", "Goldhawk Road", "Shepherd's Bush Market", "Wood Lane", "Latimer Road", "Ladbroke Grove", "Westbourne Park", "Royal Oak", "Paddington", "Edgware Road", "Baker Street", "Great Portland Street", "Euston Square", "King's Cross St Pancras", "Farringdon", "Barbican", "Moorgate", "Liverpool Street", "Aldgate", "Tower Hill", "Monument", "Cannon Street", "Mansion House", "Blackfriars", "Temple", "Embankment", "Westminster", "St James's Park", "Victoria", "Sloane Square", "South Kensington", "Gloucester Road", "High Street Kensington", "Notting Hill Gate", "Bayswater"],
+  "hammersmith-city": ["Hammersmith", "Goldhawk Road", "Shepherd's Bush Market", "Wood Lane", "Latimer Road", "Ladbroke Grove", "Westbourne Park", "Royal Oak", "Paddington", "Edgware Road", "Baker Street", "Great Portland Street", "Euston Square", "King's Cross St Pancras", "Farringdon", "Barbican", "Moorgate", "Liverpool Street", "Aldgate East", "Whitechapel", "Stepney Green", "Mile End", "Bow Road", "Bromley-by-Bow", "West Ham", "Plaistow", "Upton Park", "East Ham", "Barking"],
+  "jubilee": ["Stanmore", "Canons Park", "Queensbury", "Kingsbury", "Wembley Park", "Neasden", "Dollis Hill", "Willesden Green", "Kilburn", "West Hampstead", "Finchley Road", "Swiss Cottage", "St John's Wood", "Baker Street", "Bond Street", "Green Park", "Westminster", "Waterloo", "Southwark", "London Bridge", "Bermondsey", "Canada Water", "Canary Wharf", "North Greenwich", "Canning Town", "Stratford"],
+  "metropolitan": ["Aldgate", "Liverpool Street", "Moorgate", "Barbican", "Farringdon", "King's Cross St Pancras", "Euston Square", "Great Portland Street", "Baker Street", "Finchley Road", "Wembley Park", "Preston Road", "Harrow-on-the-Hill", "North Harrow", "Pinner", "Northwood Hills", "Northwood", "Moor Park", "Rickmansworth", "Chorleywood", "Chalfont & Latimer", "Amersham", "Chesham", "Watford", "West Harrow", "Rayners Lane", "Eastcote", "Ruislip Manor", "Ruislip", "Ickenham", "Hillingdon", "Uxbridge"],
+  "victoria": ["Brixton", "Stockwell", "Vauxhall", "Pimlico", "Victoria", "Green Park", "Oxford Circus", "Warren Street", "Euston", "King's Cross St Pancras", "Highbury & Islington", "Finsbury Park", "Seven Sisters", "Tottenham Hale", "Blackhorse Road", "Walthamstow Central"],
+  "waterloo-city": ["Waterloo", "Bank"],
+  "dlr": ["Bank", "Tower Gateway", "Shadwell", "Limehouse", "Westferry", "Poplar", "Blackwall", "East India", "Canning Town", "West Silvertown", "Pontoon Dock", "London City Airport", "King George V", "Woolwich Arsenal", "Canary Wharf", "Heron Quays", "South Quay", "Crossharbour", "Mudchute", "Island Gardens", "Cutty Sark", "Greenwich", "Deptford Bridge", "Elverson Road", "Lewisham", "Stratford", "Stratford High Street", "Stratford International"]
 };
 
 function escapeHtml(value) {
@@ -501,9 +482,17 @@ function classify(statusText) {
   return { type: "minor", label: statusText || "Unknown" };
 }
 
-function analyzeRouteStatus(lineId, statusObj) {
+function getLineBranches(lineId) {
+  if (LINE_BRANCHES[lineId]) {
+    return LINE_BRANCHES[lineId];
+  }
   const route = LINE_ROUTES[lineId] || [];
-  const stationStatuses = new Map();
+  return [{ name: "Main Line", stations: route }];
+}
+
+function analyzeRouteStatus(lineId, statusObj) {
+  const branches = getLineBranches(lineId);
+  const branchResults = [];
   const summaryBanners = [];
 
   function addBanner(type, text) {
@@ -514,62 +503,69 @@ function analyzeRouteStatus(lineId, statusObj) {
 
   const lineStatuses = statusObj?.lineStatuses || [];
 
-  lineStatuses.forEach(status => {
-    const mainSeverity = classify(status.statusSeverityDescription);
-    const reason = status.reason || status.disruption?.description || "";
-    const lowerReason = reason.toLowerCase();
+  branches.forEach(branch => {
+    const route = branch.stations;
+    const stationStatuses = new Map();
 
-    const closedRegex = /(?:no service|suspended|part closure|closed|part suspended)\s+(?:between|from)\s+([a-z0-9\s&'-]+?)\s+(?:and|to)\s+([a-z0-9\s&'-]+?)(?=\s+due|\s+while|\s+and|\.|$)/gi;
-    let match;
-    let foundRange = false;
+    lineStatuses.forEach(status => {
+      const mainSeverity = classify(status.statusSeverityDescription);
+      const reason = status.reason || status.disruption?.description || "";
+      const lowerReason = reason.toLowerCase();
 
-    while ((match = closedRegex.exec(lowerReason)) !== null) {
-      const startStr = cleanStationName(match[1]);
-      const endStr = cleanStationName(match[2]);
+      const closedRegex = /(?:no service|suspended|part closure|closed|part suspended)\s+(?:between|from)\s+([a-z0-9\s&'-]+?)\s+(?:and|to)\s+([a-z0-9\s&'-]+?)(?=\s+due|\s+while|\s+and|\.|$)/gi;
+      let match;
+      let foundRange = false;
 
-      const idxA = route.findIndex(s => {
-        const cs = cleanStationName(s);
-        return startStr.includes(cs) || cs.includes(startStr);
-      });
-      const idxB = route.findIndex(s => {
-        const cs = cleanStationName(s);
-        return endStr.includes(cs) || cs.includes(endStr);
-      });
+      while ((match = closedRegex.exec(lowerReason)) !== null) {
+        const startStr = cleanStationName(match[1]);
+        const endStr = cleanStationName(match[2]);
 
-      if (idxA !== -1 && idxB !== -1) {
-        foundRange = true;
-        const start = Math.min(idxA, idxB);
-        const end = Math.max(idxA, idxB);
-        for (let i = start; i <= end; i++) {
-          stationStatuses.set(i, "closed");
+        const idxA = route.findIndex(s => {
+          const cs = cleanStationName(s);
+          return startStr.includes(cs) || cs.includes(startStr);
+        });
+        const idxB = route.findIndex(s => {
+          const cs = cleanStationName(s);
+          return endStr.includes(cs) || cs.includes(endStr);
+        });
+
+        if (idxA !== -1 && idxB !== -1) {
+          foundRange = true;
+          const start = Math.min(idxA, idxB);
+          const end = Math.max(idxA, idxB);
+          for (let i = start; i <= end; i++) {
+            stationStatuses.set(i, "closed");
+          }
+          addBanner("closed", `No service between ${route[start]} and ${route[end]}`);
         }
-        addBanner("closed", `No service between ${route[start]} and ${route[end]}`);
       }
-    }
 
-    if (mainSeverity.type === "closed" && !foundRange) {
-      route.forEach((_, idx) => stationStatuses.set(idx, "closed"));
-      addBanner("closed", "No service on line");
-    }
+      if (mainSeverity.type === "closed" && !foundRange) {
+        route.forEach((_, idx) => stationStatuses.set(idx, "closed"));
+        addBanner("closed", "No service on line");
+      }
 
-    if (lowerReason.includes("severe delays") || (mainSeverity.type === "severe" && stationStatuses.size === 0)) {
-      route.forEach((_, idx) => {
-        if (!stationStatuses.has(idx)) {
-          stationStatuses.set(idx, "severe");
-        }
-      });
-      addBanner("severe", stationStatuses.size === route.length ? "Severe delays across entire line" : "Severe delays on rest of the line");
-    } else if (lowerReason.includes("minor delays") || (mainSeverity.type === "minor" && stationStatuses.size === 0)) {
-      route.forEach((_, idx) => {
-        if (!stationStatuses.has(idx)) {
-          stationStatuses.set(idx, "minor");
-        }
-      });
-      addBanner("minor", stationStatuses.size === route.length ? "Minor delays across entire line" : "Minor delays on rest of the line");
-    }
+      if (lowerReason.includes("severe delays") || (mainSeverity.type === "severe" && stationStatuses.size === 0)) {
+        route.forEach((_, idx) => {
+          if (!stationStatuses.has(idx)) {
+            stationStatuses.set(idx, "severe");
+          }
+        });
+        addBanner("severe", "Severe delays reported");
+      } else if (lowerReason.includes("minor delays") || (mainSeverity.type === "minor" && stationStatuses.size === 0)) {
+        route.forEach((_, idx) => {
+          if (!stationStatuses.has(idx)) {
+            stationStatuses.set(idx, "minor");
+          }
+        });
+        addBanner("minor", "Minor delays reported");
+      }
+    });
+
+    branchResults.push({ name: branch.name, route, stationStatuses });
   });
 
-  return { route, stationStatuses, summaryBanners };
+  return { branchResults, summaryBanners };
 }
 
 function buildDiagramHtml(route, stationStatuses) {
@@ -617,7 +613,7 @@ function cardLive(line, forceOpenMap = false) {
   if (!statusObj) return "";
 
   const mainClassify = classify(statusObj.statusSeverityDescription);
-  const { route, stationStatuses, summaryBanners } = analyzeRouteStatus(line.id, line);
+  const { branchResults, summaryBanners } = analyzeRouteStatus(line.id, line);
   const styleConf = LINE_COLORS[line.id] || { var: "var(--color-default)", text: "#fff" };
   const isFav = favoriteLines.has(line.id);
   const description = statusObj.reason || statusObj.disruption?.description || "";
@@ -639,14 +635,20 @@ function cardLive(line, forceOpenMap = false) {
   ).join("");
 
   let routeVisualization = "";
-  if (route.length > 0) {
-    routeVisualization = `
-      <details class="map-details" ${forceOpenMap ? 'open' : ''}>
-        <summary>🗺️ ${forceOpenMap ? 'Visual Route Map' : `Show visual map (${stationStatuses.size} station(s) affected)`}</summary>
-        ${buildDiagramHtml(route, stationStatuses)}
-      </details>
-    `;
-  }
+
+  const branchesHtml = branchResults.map(branch => `
+    <div class="branch-container">
+      <div class="branch-title">📍 ${escapeHtml(branch.name)}</div>
+      ${buildDiagramHtml(branch.route, branch.stationStatuses)}
+    </div>
+  `).join("");
+
+  routeVisualization = `
+    <details class="map-details" ${forceOpenMap ? 'open' : ''}>
+      <summary>🗺️ ${forceOpenMap ? 'Branch Route Maps' : 'Show map'}</summary>
+      ${branchesHtml}
+    </details>
+  `;
 
   return `<article class="card" style="--line-color: ${styleConf.var}; --badge-text: ${styleConf.text};">
     <div class="top">
@@ -668,7 +670,7 @@ function cardLive(line, forceOpenMap = false) {
   </article>`;
 }
 
-// SEARCH ALL TFL STATIONS AND NATIONAL RAIL HUBS
+// SEARCH STATIONS
 let searchTimeout = null;
 async function searchStations(query) {
   const dropdown = document.getElementById("station-dropdown");
@@ -688,12 +690,14 @@ async function searchStations(query) {
       return;
     }
 
-    dropdown.innerHTML = data.matches.map(st => `
-      <div class="search-result-item" onclick="selectStationForTimetable('${st.id}', '${escapeHtml(st.name.replace(/'/g, "\\'"))}')">
-        <span>📍 ${escapeHtml(st.name)}</span>
-        <span class="station-modes">${escapeHtml((st.modes || []).join(', '))}</span>
-      </div>
-    `).join('');
+    dropdown.innerHTML = data.matches.map(st => {
+      return `
+        <div class="search-result-item" onclick="selectStationForTimetable('${st.id}', '${escapeHtml(st.name.replace(/'/g, "\\'"))}')">
+          <span>📍 ${escapeHtml(st.name)}</span>
+          <span class="station-modes">${escapeHtml((st.modes || []).join(', '))}</span>
+        </div>
+      `;
+    }).join('');
     dropdown.style.display = "block";
   } catch (err) {
     console.error(err);
@@ -708,7 +712,7 @@ function selectStationForTimetable(stopPointId, stationName) {
   loadLiveTimetable(stopPointId, stationName);
 }
 
-// MULTI-POINT ARRIVALS FETCH ENGINE WITH HUB RESOLUTION
+// MULTI-POINT ARRIVALS FETCH WITH NATIONAL RAIL FALLBACK LINK
 async function loadLiveTimetable(stopPointId, stationName = "") {
   const results = document.getElementById("results");
   if (!stopPointId) {
@@ -721,31 +725,39 @@ async function loadLiveTimetable(stopPointId, stationName = "") {
   try {
     let idsToFetch = [stopPointId];
 
-    // If selected ID is a HUB, expand into physical stop IDs
-    if (stopPointId.startsWith("HUB") || stopPointId.startsWith("910G") || stopPointId.startsWith("940G")) {
-      const detailUrl = `https://api.tfl.gov.uk/StopPoint/${stopPointId}`;
-      const detailRes = await fetch(detailUrl);
-      if (detailRes.ok) {
-        const detailData = await detailRes.json();
-        const children = (detailData.children || []).map(c => c.id).filter(Boolean);
-        if (children.length > 0) {
-          idsToFetch = [stopPointId, ...children];
-        }
+    const detailUrl = `https://api.tfl.gov.uk/StopPoint/${stopPointId}`;
+    const detailRes = await fetch(detailUrl);
+    if (detailRes.ok) {
+      const detailData = await detailRes.json();
+      const children = (detailData.children || []).map(c => c.id).filter(Boolean);
+      if (children.length > 0) {
+        idsToFetch = children;
+      } else if (detailData.id) {
+        idsToFetch = [detailData.id];
       }
     }
 
-    // Query StopPoint arrivals
-    const arrivalsUrl = `https://api.tfl.gov.uk/StopPoint/${idsToFetch.slice(0, 10).join(',')}/Arrivals`;
+    const arrivalsUrl = `https://api.tfl.gov.uk/StopPoint/${idsToFetch.slice(0, 12).join(',')}/Arrivals`;
     const response = await fetch(arrivalsUrl);
     
     if (!response.ok) {
-      throw new Error("HTTP " + response.status);
+      throw new Error(`HTTP ${response.status}`);
     }
 
-    let arrivals = await response.json();
+    var arrivals = await response.json();
 
     if (!arrivals || arrivals.length === 0) {
-      results.innerHTML = `<div class="message">No upcoming train departures found for <strong>${escapeHtml(stationName)}</strong> right now. Services may be closed or operating with limited live telemetry.</div>`;
+      // Build National Rail Enquiries fallback link
+      const nrQuery = encodeURIComponent(stationName.replace(/\s*(underground|rail|station)\s*/gi, ''));
+      const fallbackUrl = `https://www.nationalrail.co.uk/live-trains/departures/${nrQuery}/`;
+
+      results.innerHTML = `
+        <div class="nr-fallback-card">
+          <strong style="font-size: 15px;">No live TfL arrivals returned for ${escapeHtml(stationName)}.</strong>
+          <p style="font-size: 13px; color: var(--text-muted); margin: 6px 0 0;">National Rail or regional operators may not broadcast live telemetry directly through TfL's public feed.</p>
+          <a href="${fallbackUrl}" target="_blank" rel="noopener">🚆 View Live Board on National Rail Enquiries →</a>
+        </div>
+      `;
       return;
     }
 
@@ -761,7 +773,7 @@ async function loadLiveTimetable(stopPointId, stationName = "") {
       grouped[groupKey].push(train);
     });
 
-    let html = `<div style="font-weight: 800; font-size: 16px; margin-bottom: 12px; color: #111;">📍 Live Departures for ${escapeHtml(stationName)}</div>`;
+    let html = `<div style="font-weight: 800; font-size: 16px; margin-bottom: 12px; color: var(--text-color);">📍 Live Departures for ${escapeHtml(stationName)}</div>`;
     for (const [title, trains] of Object.entries(grouped)) {
       html += `<div class="timetable-group">
         <div class="timetable-group-title">
@@ -790,7 +802,16 @@ async function loadLiveTimetable(stopPointId, stationName = "") {
     updateRelativeTime();
   } catch (err) {
     console.error(err);
-    results.innerHTML = `<div class="message"><strong>Could not load arrivals.</strong><p>Network query failed (${escapeHtml(err.message)}). Try selecting the station again or clicking refresh.</p></div>`;
+    const nrQuery = encodeURIComponent(stationName.replace(/\s*(underground|rail|station)\s*/gi, ''));
+    const fallbackUrl = `https://www.nationalrail.co.uk/live-trains/departures/${nrQuery}/`;
+
+    results.innerHTML = `
+      <div class="nr-fallback-card">
+        <strong style="font-size: 15px;">Live departures unavailable via TfL for ${escapeHtml(stationName)}.</strong>
+        <p style="font-size: 13px; color: var(--text-muted); margin: 6px 0 0;">You can view live departure and arrival boards directly via National Rail Enquiries.</p>
+        <a href="${fallbackUrl}" target="_blank" rel="noopener">🚆 Open Live Departure Board on National Rail →</a>
+      </div>
+    `;
   }
 }
 
@@ -823,17 +844,12 @@ function renderNetworkMap(data) {
   const cardsHtml = data.map(line => {
     const statusObj = line.lineStatuses?.[0];
     const mainClassify = classify(statusObj?.statusSeverityDescription);
-    const { route, stationStatuses } = analyzeRouteStatus(line.id, line);
     const styleConf = LINE_COLORS[line.id] || { var: "var(--color-default)", text: "#fff" };
     const hasDisruption = mainClassify.type !== "good";
 
     let summaryLabel = "✓ Normal service →";
     if (hasDisruption) {
-      if (stationStatuses.size >= route.length && route.length > 0) {
-        summaryLabel = "⚠️ Entire line affected →";
-      } else {
-        summaryLabel = `⚠️ Part of line affected (${stationStatuses.size} stations) →`;
-      }
+      summaryLabel = `⚠️ ${mainClassify.label} →`;
     }
 
     return `
@@ -852,7 +868,7 @@ function renderNetworkMap(data) {
   results.innerHTML = `
     <div class="network-container">
       <div class="network-title">Interactive TfL Network Overview</div>
-      <p style="font-size: 13px; color: #666; margin-top: -6px; margin-bottom: 14px;">Tap any line below to view its color-coded visual route map.</p>
+      <p style="font-size: 13px; color: var(--text-muted); margin-top: -6px; margin-bottom: 14px;">Tap any line below to view its color-coded map.</p>
       <div class="network-grid">${cardsHtml}</div>
     </div>
   `;
@@ -899,7 +915,9 @@ async function loadStatus() {
         data = data.filter(line => {
           const nameMatch = line.name.toLowerCase().includes(searchQuery);
           const descMatch = (line.lineStatuses?.[0]?.reason || "").toLowerCase().includes(searchQuery);
-          const routeMatch = (LINE_ROUTES[line.id] || []).some(s => s.toLowerCase().includes(searchQuery));
+          
+          const branches = getLineBranches(line.id);
+          const routeMatch = branches.some(b => b.stations.some(s => s.toLowerCase().includes(searchQuery)));
           return nameMatch || descMatch || routeMatch;
         });
       }
@@ -1008,3 +1026,5 @@ setInterval(updateRelativeTime, 10_000);
 </script>
 </body>
 </html>
+
+```
