@@ -200,29 +200,6 @@
     details.raw-details summary { color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer; }
     .raw { background: var(--border-color); padding: 10px; margin-top: 8px; font-size: 13px; line-height: 1.4; border-radius: 6px; }
     .message { background: var(--card-bg); padding: 18px; border-radius: 12px; text-align: center; color: var(--text-muted); }
-
-    footer {
-      text-align: center; padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
-      font-size: 13px; color: var(--text-muted); border-top: 1px solid var(--border-color); background: var(--toolbar-bg);
-    }
-    footer a { color: var(--text-color); font-weight: 700; text-decoration: underline; cursor: pointer; }
-
-    .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6);
-      display: flex; align-items: center; justify-content: center; padding: 16px;
-      z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
-    }
-    .modal-overlay.open { opacity: 1; pointer-events: auto; }
-    .modal-content {
-      background: var(--card-bg); max-width: 580px; width: 100%; max-height: 85vh;
-      border-radius: 16px; padding: 24px; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-      color: var(--text-color);
-    }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .modal-header h2 { margin: 0; font-size: 18px; }
-    .btn-close-modal { background: none; border: 0; font-size: 22px; cursor: pointer; color: var(--text-muted); font-weight: 700; }
-    .modal-body h3 { font-size: 15px; margin: 18px 0 6px; }
-    .modal-body p { font-size: 14px; line-height: 1.5; color: var(--text-color); margin: 0 0 10px; }
   </style>
 </head>
 <body>
@@ -252,34 +229,6 @@
   </div>
   <div id="results"><div class="message">Loading status…</div></div>
 </main>
-
-<footer>
-  Need help? <a id="open-help-modal">How to use this page</a>
-</footer>
-
-<div class="modal-overlay" id="help-modal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2>Quick Guide</h2>
-      <button class="btn-close-modal" id="close-help-modal">&times;</button>
-    </div>
-    <div class="modal-body">
-      <p>This tool translates complex TfL updates into clear, visual route maps so you can quickly see which stations are delayed or closed.</p>
-
-      <h3>🗺️ Live Status Dashboard</h3>
-      <p>Your main dashboard. Underground, Elizabeth, DLR, and all 6 individual London Overground lines are categorized clearly without duplicates. Tap on any line to view its visual branch map.</p>
-
-      <h3>⚠️ Status Symbols</h3>
-      <p>Route maps use clear warning icons next to station names:</p>
-      <ul>
-        <li><strong>⚠️ Warning Sign:</strong> Minor Delays on this station or branch segment.</li>
-        <li><strong>🚨 Alert Sign:</strong> Severe Delays on this station or branch segment.</li>
-        <li><strong>⛔ Stop Sign:</strong> Closed / No Service on this segment.</li>
-        <li><strong>🚧 Barrier Sign:</strong> Planned Track Works.</li>
-      </ul>
-    </div>
-  </div>
-</div>
 
 <script>
 // CORE UTILITY FUNCTIONS
@@ -568,23 +517,15 @@ function getInterchangeBadgesHtml(currentLineId, stationName) {
   }).join("");
 }
 
-// ENHANCED ROUTE MAP DIAGRAM (CLEAR HIGH-CONTRAST TYPOGRAPHY + WIDER SPACING)
+// ROUTE MAP DIAGRAM WITH WARNING SYMBOLS SHOWN FOR ALL STATIONS
 function renderSVGTreeDiagram(lineId, stationStatuses) {
   const lineConf = LINE_COLORS[lineId] || { hex: "#EE7C0E" };
   const baseColor = lineConf.hex;
 
-  let totalStationCount = 0;
-  let delayedStationCount = 0;
-  stationStatuses.forEach((val) => {
-    totalStationCount++;
-    if (val === "minor" || val === "severe") delayedStationCount++;
-  });
-  const isLineWideDelay = totalStationCount > 0 && totalStationCount === delayedStationCount;
-
   function getStatusStyle(status) {
     if (status === "closed") return { fill: "var(--status-closed)", stroke: "var(--status-closed)", symbol: " ⛔", text: "var(--status-closed)" };
-    if (status === "severe") return { fill: "var(--status-severe)", stroke: "var(--status-severe)", symbol: isLineWideDelay ? "" : " 🚨", text: "var(--status-severe)" };
-    if (status === "minor") return { fill: "var(--status-minor)", stroke: "var(--status-minor)", symbol: isLineWideDelay ? "" : " ⚠️", text: "var(--status-minor)" };
+    if (status === "severe") return { fill: "var(--status-severe)", stroke: "var(--status-severe)", symbol: " 🚨", text: "var(--status-severe)" };
+    if (status === "minor") return { fill: "var(--status-minor)", stroke: "var(--status-minor)", symbol: " ⚠️", text: "var(--status-minor)" };
     if (status === "planned") return { fill: "var(--status-planned)", stroke: "var(--status-planned)", symbol: " 🚧", text: "var(--status-planned)" };
     return { fill: "#ffffff", stroke: baseColor, symbol: "", text: "var(--text-color)" };
   }
@@ -977,14 +918,6 @@ async function loadStatus() {
     document.getElementById("updated").textContent = "Unable to update";
   }
 }
-
-// Modal Event Bindings
-const helpModal = document.getElementById("help-modal");
-document.getElementById("open-help-modal").addEventListener("click", () => helpModal.classList.add("open"));
-document.getElementById("close-help-modal").addEventListener("click", () => helpModal.classList.remove("open"));
-helpModal.addEventListener("click", (e) => {
-  if (e.target === helpModal) helpModal.classList.remove("open");
-});
 
 document.getElementById("tab-map").addEventListener("click", (e) => {
   currentTab = "map";
