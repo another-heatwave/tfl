@@ -279,10 +279,25 @@
 </div>
 
 <script>
+// UTILITY FUNCTIONS (DECLARED AT TOP TO AVOID UNCAUGHT REFERENCE ERRORS)
 function escapeHtml(value) {
   const div = document.createElement("div");
   div.textContent = value || "";
   return div.innerHTML;
+}
+
+function cleanStationName(str) {
+  return str.toLowerCase().replace(/\s*(station|underground station|rail station|line)\s*/gi, '').trim();
+}
+
+function classify(statusText) {
+  const lower = (statusText || "").toLowerCase();
+  if (lower.includes("good")) return { type: "good", label: "Good service" };
+  if (lower.includes("planned") || lower.includes("work")) return { type: "planned", label: statusText };
+  if (lower.includes("no service") || lower.includes("suspended") || lower.includes("part closure") || lower.includes("closure")) return { type: "closed", label: statusText };
+  if (lower.includes("severe")) return { type: "severe", label: statusText };
+  if (lower.includes("minor") || lower.includes("delays") || lower.includes("reduced")) return { type: "minor", label: statusText };
+  return { type: "minor", label: statusText || "Unknown" };
 }
 
 const API_LIVE = "https://api.tfl.gov.uk/Line/Mode/tube,dlr,elizabeth-line,overground/Status?detail=true";
@@ -293,6 +308,7 @@ let lastUpdatedTime = null;
 let cachedLiveMapData = [];
 let favoriteLines = new Set(JSON.parse(localStorage.getItem("tfl_fav_lines") || "[]"));
 
+// EMBEDDED SCHEDULE DATA FROM TFL PLANNED TRACK CLOSURES PDF
 const PLANNED_SCHEDULE = [
   { line: "district", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Turnham Green to Richmond" },
   { line: "dlr", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Tower Gateway to Shadwell" },
@@ -375,7 +391,6 @@ const INTERCHANGE_DIRECTORY = {
   "Whitechapel": ["district", "hammersmith-city", "elizabeth", "london-overground"]
 };
 
-// COMPREHENSIVE TREE ROUTE DEFINITIONS INCLUDING OVERGROUND & WINDRUSH BRANCHES
 const LINE_TREES = {
   "central": {
     junctions: [
@@ -729,13 +744,12 @@ function closeLineDetailView() {
   loadStatus();
 }
 
-// RENDER REORGANIZED NETWORK MAP GRID
+// REORGANIZED CATEGORIES: UNDERGROUND/RAIL VS OVERGROUND
 function renderNetworkMap(data) {
   const results = document.getElementById("results");
 
-  // Re-grouped into Underground/Rail vs Overground
   const modeGroups = {
-    tube: { title: "London Underground & Rail", lines: [] },
+    tube: { title: "London Underground & Rail Lines", lines: [] },
     overground: { title: "London Overground Lines", lines: [] }
   };
 
