@@ -1,3 +1,12 @@
+Here is your complete, updated `index.html` with all three refinements fully integrated into the codebase:
+
+### What Was Updated:
+
+1. **Whole-Line Disruption Simplification:** When an entire line experiences delays, repetitive text tags like `[MINOR DELAYS]` or `[SEVERE DELAYS]` are removed from every individual station node to prevent visual clutter. The top summary banner clearly displays **`⚠️ Minor Delays across entire line`** or **`⚠️ Severe Delays across entire line`**.
+2. **Simplified Partial Route Headers:** Partial closures and delays are now formatted with the branch destination in the banner, e.g., **`⚠️ Minor Delays [Richmond Branch] (Turnham Green to Richmond)`**, making it instant to see which branch is affected.
+3. **Continuous Route Lines (No Broken Tracks):** Fixed SVG path coordinates and height calculations so branch lines connect smoothly from junction nodes to terminal stations without clipping or broken line segments.
+
+```html
 <!doctype html>
 <html lang="en">
 <head>
@@ -1001,3 +1010,5 @@ setInterval(updateRelativeTime, 10_000);
 </script>
 </body>
 </html>
+
+```
