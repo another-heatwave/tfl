@@ -1,12 +1,3 @@
-Here is your complete, updated `index.html` with all three refinements fully integrated into the codebase:
-
-### What Was Updated:
-
-1. **Whole-Line Disruption Simplification:** When an entire line experiences delays, repetitive text tags like `[MINOR DELAYS]` or `[SEVERE DELAYS]` are removed from every individual station node to prevent visual clutter. The top summary banner clearly displays **`⚠️ Minor Delays across entire line`** or **`⚠️ Severe Delays across entire line`**.
-2. **Simplified Partial Route Headers:** Partial closures and delays are now formatted with the branch destination in the banner, e.g., **`⚠️ Minor Delays [Richmond Branch] (Turnham Green to Richmond)`**, making it instant to see which branch is affected.
-3. **Continuous Route Lines (No Broken Tracks):** Fixed SVG path coordinates and height calculations so branch lines connect smoothly from junction nodes to terminal stations without clipping or broken line segments.
-
-```html
 <!doctype html>
 <html lang="en">
 <head>
@@ -17,6 +8,7 @@ Here is your complete, updated `index.html` with all three refinements fully int
   <style>
     :root {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-scale: 0px;
       --bg-color: #f2f2f2;
       --card-bg: #ffffff;
       --text-color: #111111;
@@ -74,14 +66,14 @@ Here is your complete, updated `index.html` with all three refinements fully int
       margin: 0; background: var(--bg-color); color: var(--text-color);
       min-height: 100vh; display: flex; flex-direction: column;
       transition: background 0.2s ease, color 0.2s ease;
-      font-size: 14px;
+      font-size: calc(14px + var(--font-scale));
     }
     header {
       background: #111; color: white;
       padding: calc(18px + env(safe-area-inset-top)) 18px 18px;
     }
-    header h1 { margin: 0; font-size: 22px; }
-    header p { margin: 5px 0 0; color: #d0d0d0; font-size: 14px; }
+    header h1 { margin: 0; font-size: calc(22px + var(--font-scale)); }
+    header p { margin: 5px 0 0; color: #d0d0d0; font-size: calc(14px + var(--font-scale)); }
     
     .tab-bar {
       display: flex; background: #222; padding: 4px;
@@ -89,7 +81,7 @@ Here is your complete, updated `index.html` with all three refinements fully int
     }
     .tab-btn {
       flex: 1; background: transparent; color: #aaa; border: 0;
-      padding: 10px 6px; font-size: 13px; font-weight: 700; cursor: pointer;
+      padding: 10px 6px; font-size: calc(13px + var(--font-scale)); font-weight: 700; cursor: pointer;
       border-radius: 8px; transition: all 0.2s ease; text-align: center; white-space: nowrap;
     }
     .tab-btn.active { background: #fff; color: #111; }
@@ -106,22 +98,27 @@ Here is your complete, updated `index.html` with all three refinements fully int
     }
     .search-input {
       width: 100%; padding: 10px 14px; border: 1px solid var(--border-color);
-      border-radius: 10px; font-size: 14px; outline: none;
+      border-radius: 10px; font-size: calc(14px + var(--font-scale)); outline: none;
       background: var(--input-bg); color: var(--text-color);
       box-shadow: inset 0 1px 3px rgba(0,0,0,0.04);
     }
 
     .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .toggle-fav, .toggle-theme {
-      font-size: 13px; font-weight: 600; cursor: pointer; user-select: none;
+      font-size: calc(13px + var(--font-scale)); font-weight: 600; cursor: pointer; user-select: none;
       display: flex; align-items: center; gap: 6px;
     }
-    #updated { color: var(--text-muted); font-size: 13px; }
+    .btn-font-scale {
+      border: 1px solid var(--border-color); background: var(--card-bg);
+      color: var(--text-color); font-weight: 800; border-radius: 6px;
+      padding: 6px 12px; cursor: pointer; font-size: calc(13px + var(--font-scale));
+    }
+    #updated { color: var(--text-muted); font-size: calc(13px + var(--font-scale)); }
     
     button.btn-refresh {
       border: 0; border-radius: 8px; padding: 8px 14px;
       font-weight: 700; cursor: pointer; background: #111; color: white;
-      font-size: 13px; display: inline-flex; align-items: center; gap: 6px;
+      font-size: calc(13px + var(--font-scale)); display: inline-flex; align-items: center; gap: 6px;
       transition: background 0.2s ease;
     }
     body.dark-mode button.btn-refresh { background: #333; }
@@ -130,7 +127,7 @@ Here is your complete, updated `index.html` with all three refinements fully int
     button.btn-back {
       border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 14px;
       font-weight: 700; cursor: pointer; background: var(--card-bg); color: var(--text-color);
-      font-size: 13px; margin-bottom: 14px; display: inline-flex; align-items: center; gap: 6px;
+      font-size: calc(13px + var(--font-scale)); margin-bottom: 14px; display: inline-flex; align-items: center; gap: 6px;
     }
 
     .card {
@@ -146,11 +143,11 @@ Here is your complete, updated `index.html` with all three refinements fully int
     
     .line-badge {
       background: var(--line-color, var(--color-default));
-      color: var(--badge-text, #fff); font-size: 14px; font-weight: 800;
+      color: var(--badge-text, #fff); font-size: calc(14px + var(--font-scale)); font-weight: 800;
       padding: 5px 12px; border-radius: 6px; display: inline-block;
     }
 
-    .status { font-size: 14px; font-weight: 800; text-align: right; }
+    .status { font-size: calc(14px + var(--font-scale)); font-weight: 800; text-align: right; }
     .status.good { color: var(--status-good); }
     .status.closed { color: var(--status-closed); }
     .status.severe { color: var(--status-severe); }
@@ -160,7 +157,7 @@ Here is your complete, updated `index.html` with all three refinements fully int
     .details { padding: 0 15px 15px; border-top: 1px solid var(--border-color); }
 
     .segment-summary {
-      font-size: 13px; font-weight: 700; padding: 8px 12px;
+      font-size: calc(13px + var(--font-scale)); font-weight: 700; padding: 8px 12px;
       border-radius: 0 6px 6px 0; margin-top: 12px;
     }
     .segment-summary.closed { background: rgba(198, 40, 40, 0.15); border-left: 3px solid var(--status-closed); color: var(--status-closed); }
@@ -180,7 +177,7 @@ Here is your complete, updated `index.html` with all three refinements fully int
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     }
     .works-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
-    .works-date { font-size: 12px; font-weight: 800; background: rgba(217, 119, 6, 0.15); color: var(--status-planned); padding: 4px 8px; border-radius: 6px; }
+    .works-date { font-size: calc(12px + var(--font-scale)); font-weight: 800; background: rgba(217, 119, 6, 0.15); color: var(--status-planned); padding: 4px 8px; border-radius: 6px; }
 
     .ic-badge {
       display: inline-flex; align-items: center; gap: 2px; font-size: 9px;
@@ -189,9 +186,9 @@ Here is your complete, updated `index.html` with all three refinements fully int
     }
 
     .network-container { background: var(--card-bg); border-radius: 12px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
-    .network-title { font-size: 18px; font-weight: 800; margin-bottom: 12px; }
+    .network-title { font-size: calc(18px + var(--font-scale)); font-weight: 800; margin-bottom: 12px; }
     .network-section-heading {
-      font-size: 14px; font-weight: 800; text-transform: uppercase;
+      font-size: calc(14px + var(--font-scale)); font-weight: 800; text-transform: uppercase;
       color: var(--text-muted); margin: 20px 0 10px; letter-spacing: 0.5px;
       border-bottom: 1px solid var(--border-color); padding-bottom: 6px;
     }
@@ -205,13 +202,13 @@ Here is your complete, updated `index.html` with all three refinements fully int
     .network-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--text-muted); }
 
     details.raw-details { margin-top: 10px; }
-    details.raw-details summary { color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer; }
-    .raw { background: var(--border-color); padding: 10px; margin-top: 8px; font-size: 13px; line-height: 1.4; border-radius: 6px; }
+    details.raw-details summary { color: var(--text-muted); font-size: calc(13px + var(--font-scale)); font-weight: 600; cursor: pointer; }
+    .raw { background: var(--border-color); padding: 10px; margin-top: 8px; font-size: calc(13px + var(--font-scale)); line-height: 1.4; border-radius: 6px; }
     .message { background: var(--card-bg); padding: 18px; border-radius: 12px; text-align: center; color: var(--text-muted); }
 
     footer {
       text-align: center; padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
-      font-size: 13px; color: var(--text-muted); border-top: 1px solid var(--border-color); background: var(--toolbar-bg);
+      font-size: calc(13px + var(--font-scale)); color: var(--text-muted); border-top: 1px solid var(--border-color); background: var(--toolbar-bg);
     }
     footer a { color: var(--text-color); font-weight: 700; text-decoration: underline; cursor: pointer; }
 
@@ -227,10 +224,10 @@ Here is your complete, updated `index.html` with all three refinements fully int
       color: var(--text-color);
     }
     .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .modal-header h2 { margin: 0; font-size: 18px; }
+    .modal-header h2 { margin: 0; font-size: calc(18px + var(--font-scale)); }
     .btn-close-modal { background: none; border: 0; font-size: 22px; cursor: pointer; color: var(--text-muted); font-weight: 700; }
-    .modal-body h3 { font-size: 15px; margin: 18px 0 6px; }
-    .modal-body p { font-size: 14px; line-height: 1.5; color: var(--text-color); margin: 0 0 10px; }
+    .modal-body h3 { font-size: calc(15px + var(--font-scale)); margin: 18px 0 6px; }
+    .modal-body p { font-size: calc(14px + var(--font-scale)); line-height: 1.5; color: var(--text-color); margin: 0 0 10px; }
   </style>
 </head>
 <body>
@@ -251,6 +248,7 @@ Here is your complete, updated `index.html` with all three refinements fully int
     <div class="toolbar-row">
       <div class="controls">
         <button class="btn-refresh" id="btn-refresh">🔄 Refresh Status</button>
+        <button class="btn-font-scale" id="btn-font-toggle">🔤 Text: Normal</button>
         <label class="toggle-theme">
           <input type="checkbox" id="dark-mode-toggle"> 🌙 Dark Mode
         </label>
@@ -277,14 +275,22 @@ Here is your complete, updated `index.html` with all three refinements fully int
       <h3>🗺️ Live Status Dashboard</h3>
       <p>Your main dashboard. Underground, Elizabeth, DLR, and all 6 individual London Overground lines are categorized clearly without duplicates. Tap on any line to view its visual branch map.</p>
 
-      <h3>🚧 Upcoming Works</h3>
-      <p>Provides advance warning of planned engineering work scheduled up to 7 days in advance, featuring color-coded line badges matching official TfL brand colors.</p>
+      <h3>⚠️ Status Symbols</h3>
+      <p>Route maps use subtle warning icons next to station names:</p>
+      <ul>
+        <li><strong>⚠️ Warning Sign:</strong> Minor Delays on this segment.</li>
+        <li><strong>🚨 Alert Sign:</strong> Severe Delays on this segment.</li>
+        <li><strong>⛔ Stop Sign:</strong> Closed / No Service on this segment.</li>
+      </ul>
+
+      <h3>🔤 Text Size Toggle</h3>
+      <p>Click the <strong>Text</strong> button in the toolbar to step through Normal (+0px), Large (+5px), and Extra Large (+10px) font scaling across the application.</p>
     </div>
   </div>
 </div>
 
 <script>
-// CORE UTILITIES
+// CORE UTILITY FUNCTIONS
 function escapeHtml(value) {
   const div = document.createElement("div");
   div.textContent = value || "";
@@ -312,7 +318,24 @@ let selectedLineDetailId = null;
 let lastUpdatedTime = null;
 let cachedLiveMapData = [];
 
-// SCHEDULE DATA
+// FONT SCALE CYCLER CONTROLLER (+0px, +5px, +10px)
+const fontScales = [0, 5, 10];
+const fontScaleLabels = ["Normal", "Large (+5px)", "Extra Large (+10px)"];
+let currentFontIdx = parseInt(localStorage.getItem("tfl_font_idx") || "0", 10);
+
+function applyFontScale() {
+  document.documentElement.style.setProperty('--font-scale', `${fontScales[currentFontIdx]}px`);
+  document.getElementById("btn-font-toggle").textContent = `🔤 Text: ${fontScaleLabels[currentFontIdx]}`;
+  localStorage.setItem("tfl_font_idx", currentFontIdx.toString());
+}
+
+document.getElementById("btn-font-toggle").addEventListener("click", () => {
+  currentFontIdx = (currentFontIdx + 1) % fontScales.length;
+  applyFontScale();
+});
+applyFontScale();
+
+// EMBEDDED PDF SCHEDULE DATA
 const PLANNED_SCHEDULE = [
   { line: "district", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Turnham Green to Richmond" },
   { line: "dlr", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Tower Gateway to Shadwell" },
@@ -554,7 +577,7 @@ function getInterchangeBadgesHtml(currentLineId, stationName) {
   }).join("");
 }
 
-// SVG DIAGRAM RENDERER (WHOLE LINE DELAYS CHECK & CONTINUOUS TRACK LINES)
+// ROUTE MAP DIAGRAM WITH OPTION 1 SYMBOLS (⚠️ Minor Delays, 🚨 Severe Delays, ⛔ Closed)
 function renderSVGTreeDiagram(lineId, stationStatuses) {
   const lineConf = LINE_COLORS[lineId] || { hex: "#EE7C0E" };
   const baseColor = lineConf.hex;
@@ -568,11 +591,11 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
   const isLineWideDelay = totalStationCount > 0 && totalStationCount === delayedStationCount;
 
   function getStatusStyle(status) {
-    if (status === "closed") return { fill: "var(--status-closed)", stroke: "var(--status-closed)", tag: " [CLOSED]", text: "var(--status-closed)" };
-    if (status === "severe") return { fill: "var(--status-severe)", stroke: "var(--status-severe)", tag: isLineWideDelay ? "" : " [SEVERE DELAYS]", text: "var(--status-severe)" };
-    if (status === "minor") return { fill: "var(--status-minor)", stroke: "var(--status-minor)", tag: isLineWideDelay ? "" : " [MINOR DELAYS]", text: "var(--status-minor)" };
-    if (status === "planned") return { fill: "var(--status-planned)", stroke: "var(--status-planned)", tag: " [PLANNED]", text: "var(--status-planned)" };
-    return { fill: "#ffffff", stroke: baseColor, tag: "", text: "var(--text-muted)" };
+    if (status === "closed") return { fill: "var(--status-closed)", stroke: "var(--status-closed)", symbol: " ⛔", text: "var(--status-closed)" };
+    if (status === "severe") return { fill: "var(--status-severe)", stroke: "var(--status-severe)", symbol: isLineWideDelay ? "" : " 🚨", text: "var(--status-severe)" };
+    if (status === "minor") return { fill: "var(--status-minor)", stroke: "var(--status-minor)", symbol: isLineWideDelay ? "" : " ⚠️", text: "var(--status-minor)" };
+    if (status === "planned") return { fill: "var(--status-planned)", stroke: "var(--status-planned)", symbol: " 🚧", text: "var(--status-planned)" };
+    return { fill: "#ffffff", stroke: baseColor, symbol: "", text: "var(--text-muted)" };
   }
 
   if (!LINE_TREES[lineId]) {
@@ -601,7 +624,7 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
         svgHtml += `<circle cx="20" cy="${y}" r="6" fill="${style.fill}" stroke="${style.stroke}" stroke-width="3" />`;
       }
 
-      svgHtml += `<text x="36" y="${y + 4}" fill="${style.text}" font-size="12" font-weight="${status || isInterchange ? 'bold' : 'normal'}">${escapeHtml(st)}${style.tag}</text>`;
+      svgHtml += `<text x="36" y="${y + 4}" fill="${style.text}" font-size="12" font-weight="${status || isInterchange ? 'bold' : 'normal'}">${escapeHtml(st)}${style.symbol}</text>`;
       if (icBadges) {
         svgHtml += `<foreignObject x="200" y="${y - 10}" width="170" height="20">${icBadges}</foreignObject>`;
       }
@@ -646,7 +669,7 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
       svgHtml += `<circle cx="30" cy="${y}" r="6" fill="${style.fill}" stroke="${style.stroke}" stroke-width="3" />`;
     }
 
-    svgHtml += `<text x="46" y="${y + 4}" fill="${style.text}" font-size="12" font-weight="${status || isInterchange ? 'bold' : 'normal'}">${escapeHtml(st)}${style.tag}</text>`;
+    svgHtml += `<text x="46" y="${y + 4}" fill="${style.text}" font-size="12" font-weight="${status || isInterchange ? 'bold' : 'normal'}">${escapeHtml(st)}${style.symbol}</text>`;
     if (icBadges) {
       svgHtml += `<foreignObject x="240" y="${y - 10}" width="180" height="20">${icBadges}</foreignObject>`;
     }
@@ -692,7 +715,7 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
           svgHtml += `<circle cx="${targetX}" cy="${bY}" r="5" fill="${bStyle.fill}" stroke="${bStyle.stroke}" stroke-width="2.5" />`;
         }
 
-        svgHtml += `<text x="${targetX + 12}" y="${bY + 4}" fill="${bStyle.text}" font-size="11" font-weight="${bStatus || bIcBadges ? 'bold' : 'normal'}">${escapeHtml(st)}${bStyle.tag}</text>`;
+        svgHtml += `<text x="${targetX + 12}" y="${bY + 4}" fill="${bStyle.text}" font-size="11" font-weight="${bStatus || bIcBadges ? 'bold' : 'normal'}">${escapeHtml(st)}${bStyle.symbol}</text>`;
         bY += rowHeight;
       });
     });
@@ -1010,5 +1033,3 @@ setInterval(updateRelativeTime, 10_000);
 </script>
 </body>
 </html>
-
-```
