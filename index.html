@@ -227,6 +227,7 @@
 </main>
 
 <script>
+// CORE UTILITY FUNCTIONS
 function escapeHtml(value) {
   const div = document.createElement("div");
   div.textContent = value || "";
@@ -254,7 +255,7 @@ let selectedLineDetailId = null;
 let lastUpdatedTime = null;
 let cachedLiveMapData = [];
 
-// SCHEDULE DATA
+// EMBEDDED SCHEDULE DATA
 const PLANNED_SCHEDULE = [
   { line: "district", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Turnham Green to Richmond" },
   { line: "dlr", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Tower Gateway to Shadwell" },
@@ -389,7 +390,7 @@ const INTERCHANGE_DIRECTORY = {
   "Wimbledon": ["district", "tram", "national-rail"]
 };
 
-// ACCURATE TREE DEFINITION FOR ELIZABETH LINE (WEST TO EAST CONTINUOUS FLOW)
+// FULL TREE STRUCTURES WITH ACCURATE CONTINUOUS ELIZABETH LINE LAYOUT
 const LINE_TREES = {
   "elizabeth": {
     junctions: [
@@ -567,7 +568,7 @@ function getInterchangeBadgesHtml(currentLineId, stationName) {
   }).join("");
 }
 
-// FULLY CALCULATION SVG ROUTE RENDERER (ELIZABETH LINE NO LONGER CUTS OFF)
+// FULLY CALCULATION SVG ROUTE RENDERER
 function renderSVGTreeDiagram(lineId, stationStatuses) {
   const lineConf = LINE_COLORS[lineId] || { hex: "#EE7C0E" };
   const baseColor = lineConf.hex;
@@ -619,7 +620,6 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
   const tree = LINE_TREES[lineId];
   const rowHeight = 30;
   
-  // DYNAMIC TOTAL ROWS COUNT INCLUDING SEQUENTIAL JUNCTIONS AND DEEP BRANCHES
   let totalRowsCalculated = tree.trunk.length;
   tree.junctions.forEach(j => {
     let longestSplit = 0;
