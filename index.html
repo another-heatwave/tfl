@@ -300,7 +300,6 @@ function getUpcomingWorkNotice(lineId) {
     const end = new Date(item.endDate);
     end.setHours(23, 59, 59, 999);
 
-    // Active if today is before end date AND start date is within 7 days from today
     return today <= end && start <= nextWeek;
   });
 }
@@ -345,7 +344,7 @@ const LINE_COLORS = {
   "national-rail": { var: "var(--color-national-rail)", text: "#fff", hex: "#d2172a", name: "National Rail" }
 };
 
-// COMPREHENSIVE INTERCHANGE DIRECTORY (INCLUDING SHEPHERD'S BUSH)
+// COMPREHENSIVE INTERCHANGE DIRECTORY
 const INTERCHANGE_DIRECTORY = {
   "Shepherd's Bush": ["central", "mildmay", "national-rail"],
   "Bond Street": ["central", "jubilee", "elizabeth"],
@@ -531,7 +530,6 @@ function getInterchangeBadgesHtml(currentLineId, stationName) {
     const conf = LINE_COLORS[id];
     if (!conf) return "";
     
-    // Non-line tags like National Rail are rendered without click handlers
     if (id === "national-rail") {
       return `<span class="ic-btn" style="background:${conf.hex}; color:${conf.text}; cursor:default;">NR</span>`;
     }
@@ -541,7 +539,7 @@ function getInterchangeBadgesHtml(currentLineId, stationName) {
   }).join("");
 }
 
-// ROUTE MAP DIAGRAM WITH WARNING SYMBOLS & CLICKABLE TRANSFERS
+// ROUTE MAP DIAGRAM
 function renderSVGTreeDiagram(lineId, stationStatuses) {
   const lineConf = LINE_COLORS[lineId] || { hex: "#EE7C0E" };
   const baseColor = lineConf.hex;
@@ -720,6 +718,24 @@ function cardLive(line, forceOpenMap = false) {
   const description = statusObj.reason || statusObj.disruption?.description || "";
   const upcomingWork = getUpcomingWorkNotice(line.id);
 
+  let upcomingWorkBannerHtml = "";
+  if (upcomingWork) {
+    const fromDate = new Date(upcomingWork.startDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+    const toDate = new Date(upcomingWork.endDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+
+    upcomingWorkBannerHtml = `
+      <div class="segment-summary planned" style="margin-top: 12px; background: rgba(217, 119, 6, 0.12); border-left: 4px solid var(--status-planned); padding: 10px 12px;">
+        <div style="font-weight: 800; font-size: 13px; color: var(--status-planned); display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <span>🚧 Upcoming Works Notice</span>
+          <span style="font-size: 12px; opacity: 0.9;">📅 ${escapeHtml(fromDate)} — ${escapeHtml(toDate)}</span>
+        </div>
+        <div style="font-size: 13px; font-weight: 600; color: var(--text-color); line-height: 1.4;">
+          ${escapeHtml(upcomingWork.desc)}
+        </div>
+      </div>
+    `;
+  }
+
   if (mainClassify.type === "good" && !forceOpenMap) {
     return `<article class="card good" style="--line-color: ${styleConf.var}; --badge-text: ${styleConf.text};">
       <div class="top">
@@ -754,6 +770,7 @@ function cardLive(line, forceOpenMap = false) {
       <div class="status ${mainClassify.type}">${escapeHtml(mainClassify.label)}</div>
     </div>
     <div class="details">
+      ${upcomingWorkBannerHtml}
       ${bannersHtml}
       ${routeVisualization}
       ${description ? `
@@ -772,7 +789,6 @@ function loadUpcomingWorks() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Filter out works whose end date has passed
   const activeWorks = PLANNED_SCHEDULE.filter(item => {
     const end = new Date(item.endDate);
     end.setHours(23, 59, 59, 999);
@@ -784,7 +800,6 @@ function loadUpcomingWorks() {
     return;
   }
 
-  // Sort chronologically by start date
   activeWorks.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
 
   let html = `<div style="font-weight: 800; font-size: 16px; margin-bottom: 14px; color: var(--text-color);">🚧 Planned Track Closures Schedule</div>`;
@@ -810,7 +825,7 @@ function loadUpcomingWorks() {
   updateRelativeTime();
 }
 
-// NETWORK MAP WITH DYNAMIC 7-DAY ADVANCE UPCOMING WORKS TAGS
+// LIVE STATUS NETWORK OVERVIEW (STRICT OVERGROUND SEPARATION)
 function renderNetworkMap(data) {
   const results = document.getElementById("results");
 
