@@ -89,26 +89,17 @@
     main { max-width: 760px; width: 100%; margin: auto; padding: 16px; flex: 1; }
     
     .toolbar {
-      display: flex; flex-direction: column; gap: 10px;
-      margin-bottom: 14px; position: relative;
-    }
-    .toolbar-row {
-      display: flex; justify-content: space-between;
-      align-items: center; gap: 10px; flex-wrap: wrap;
-    }
-    .search-input {
-      width: 100%; padding: 10px 14px; border: 1px solid var(--border-color);
-      border-radius: 10px; font-size: 15px; outline: none;
-      background: var(--input-bg); color: var(--text-color);
-      box-shadow: inset 0 1px 3px rgba(0,0,0,0.04);
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 14px; background: var(--card-bg); padding: 10px 14px;
+      border-radius: 10px; border: 1px solid var(--border-color);
     }
 
-    .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .toggle-fav, .toggle-theme {
+    .controls { display: flex; align-items: center; gap: 12px; }
+    .toggle-theme {
       font-size: 14px; font-weight: 600; cursor: pointer; user-select: none;
       display: flex; align-items: center; gap: 6px;
     }
-    #updated { color: var(--text-muted); font-size: 13px; }
+    #updated { color: var(--text-muted); font-size: 13px; font-weight: 600; }
     
     button.btn-refresh {
       border: 0; border-radius: 8px; padding: 8px 14px;
@@ -134,12 +125,18 @@
       padding: 14px 15px; display: flex; justify-content: space-between;
       gap: 12px; align-items: center;
     }
-    .line-header { display: flex; align-items: center; gap: 10px; }
+    .line-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     
     .line-badge {
       background: var(--line-color, var(--color-default));
       color: var(--badge-text, #fff); font-size: 14px; font-weight: 800;
       padding: 6px 12px; border-radius: 6px; display: inline-block; letter-spacing: 0.2px;
+    }
+
+    .planned-tag {
+      background: rgba(217, 119, 6, 0.15); color: var(--status-planned);
+      border: 1px solid var(--status-planned); font-size: 11px; font-weight: 800;
+      padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;
     }
 
     .status { font-size: 14px; font-weight: 800; text-align: right; }
@@ -174,11 +171,14 @@
     .works-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
     .works-date { font-size: 12px; font-weight: 800; background: rgba(217, 119, 6, 0.15); color: var(--status-planned); padding: 4px 8px; border-radius: 6px; }
 
-    .ic-badge {
-      display: inline-flex; align-items: center; gap: 2px; font-size: 10px;
-      font-weight: 800; padding: 2px 5px; border-radius: 4px; color: #fff;
-      margin-left: 4px; text-transform: uppercase; vertical-align: middle;
+    .ic-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px;
+      color: #fff; border: 0; cursor: pointer; text-transform: uppercase;
+      vertical-align: middle; transition: opacity 0.15s ease, transform 0.15s ease;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2); margin-left: 3px;
     }
+    .ic-btn:hover { opacity: 0.85; transform: scale(1.05); }
 
     .network-container { background: var(--card-bg); border-radius: 12px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
     .network-title { font-size: 18px; font-weight: 800; margin-bottom: 12px; }
@@ -215,17 +215,13 @@
 
 <main>
   <div class="toolbar" id="toolbar">
-    <input type="text" id="search-bar" class="search-input" placeholder="Search line or station (e.g., Stratford, Canonbury, Victoria)...">
-    
-    <div class="toolbar-row">
-      <div class="controls">
-        <button class="btn-refresh" id="btn-refresh">🔄 Refresh Status</button>
-        <label class="toggle-theme">
-          <input type="checkbox" id="dark-mode-toggle"> 🌙 Dark Mode
-        </label>
-      </div>
-      <div id="updated">Loading…</div>
+    <div class="controls">
+      <button class="btn-refresh" id="btn-refresh">🔄 Refresh Status</button>
+      <label class="toggle-theme">
+        <input type="checkbox" id="dark-mode-toggle"> 🌙 Dark Mode
+      </label>
     </div>
+    <div id="updated">Loading…</div>
   </div>
   <div id="results"><div class="message">Loading status…</div></div>
 </main>
@@ -259,7 +255,7 @@ let selectedLineDetailId = null;
 let lastUpdatedTime = null;
 let cachedLiveMapData = [];
 
-// EMBEDDED SCHEDULE DATA
+// EMBEDDED SCHEDULE DATA FOR UPCOMING WORKS
 const PLANNED_SCHEDULE = [
   { line: "district", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Turnham Green to Richmond" },
   { line: "dlr", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Tower Gateway to Shadwell" },
@@ -289,6 +285,25 @@ const PLANNED_SCHEDULE = [
   { line: "weaver", startDate: "2026-08-31", endDate: "2026-08-31", desc: "Weaver Line: Hackney Downs to Enfield Town and Cheshunt after 22:45" },
   { line: "windrush", startDate: "2026-08-29", endDate: "2026-08-31", desc: "Windrush Line: Surrey Quays to Clapham Junction" }
 ];
+
+// HELPER TO CHECK IF LINE HAS UPCOMING WORKS IN NEXT 7 DAYS (OR CURRENTLY ACTIVE)
+function getUpcomingWorkNotice(lineId) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const nextWeek = new Date(today);
+  nextWeek.setDate(today.getDate() + 7);
+
+  return PLANNED_SCHEDULE.find(item => {
+    if (item.line !== lineId) return false;
+    const start = new Date(item.startDate);
+    const end = new Date(item.endDate);
+    end.setHours(23, 59, 59, 999);
+
+    // Active if today is before end date AND start date is within 7 days from today
+    return today <= end && start <= nextWeek;
+  });
+}
 
 // DARK MODE
 const darkModeToggle = document.getElementById("dark-mode-toggle");
@@ -330,8 +345,9 @@ const LINE_COLORS = {
   "national-rail": { var: "var(--color-national-rail)", text: "#fff", hex: "#d2172a", name: "National Rail" }
 };
 
-// COMPREHENSIVE INTERCHANGE DIRECTORY
+// COMPREHENSIVE INTERCHANGE DIRECTORY (INCLUDING SHEPHERD'S BUSH)
 const INTERCHANGE_DIRECTORY = {
+  "Shepherd's Bush": ["central", "mildmay", "national-rail"],
   "Bond Street": ["central", "jubilee", "elizabeth"],
   "Oxford Circus": ["bakerloo", "central", "victoria"],
   "King's Cross St Pancras": ["circle", "hammersmith-city", "metropolitan", "northern", "piccadilly", "victoria", "national-rail"],
@@ -429,7 +445,7 @@ const LINE_ROUTES = {
   "liberty": ["Romford", "Emerson Park", "Upminster"]
 };
 
-// EVALUATE STATION STATUSES (STRICT TOP-LEVEL OVERRIDE PREVENTS STATUS MISMATCH)
+// EVALUATE STATION STATUSES
 function evaluateStationStatuses(lineId, lineStatuses) {
   const stationStatuses = new Map();
   const summaryBanners = [];
@@ -503,6 +519,7 @@ function evaluateStationStatuses(lineId, lineStatuses) {
   return { stationStatuses, summaryBanners };
 }
 
+// GENERATE INTERACTIVE CLICKABLE BUTTONS FOR TRANSFERS
 function getInterchangeBadgesHtml(currentLineId, stationName) {
   const connectingLines = INTERCHANGE_DIRECTORY[stationName];
   if (!connectingLines) return "";
@@ -513,11 +530,18 @@ function getInterchangeBadgesHtml(currentLineId, stationName) {
   return otherLines.map(id => {
     const conf = LINE_COLORS[id];
     if (!conf) return "";
-    return `<span class="ic-badge" style="background:${conf.hex}; color:${conf.text}">${conf.name.replace(/\s*line\s*/gi, '')}</span>`;
+    
+    // Non-line tags like National Rail are rendered without click handlers
+    if (id === "national-rail") {
+      return `<span class="ic-btn" style="background:${conf.hex}; color:${conf.text}; cursor:default;">NR</span>`;
+    }
+
+    const shortCode = conf.name.replace(/\s*line\s*/gi, '').substring(0, 3);
+    return `<button class="ic-btn" style="background:${conf.hex}; color:${conf.text};" onclick="openLineDetailView('${id}'); event.stopPropagation();" title="Jump to ${escapeHtml(conf.name)}">${escapeHtml(shortCode)}</button>`;
   }).join("");
 }
 
-// ROUTE MAP DIAGRAM WITH WARNING SYMBOLS SHOWN FOR ALL AFFECTED STATIONS
+// ROUTE MAP DIAGRAM WITH WARNING SYMBOLS & CLICKABLE TRANSFERS
 function renderSVGTreeDiagram(lineId, stationStatuses) {
   const lineConf = LINE_COLORS[lineId] || { hex: "#EE7C0E" };
   const baseColor = lineConf.hex;
@@ -694,12 +718,14 @@ function cardLive(line, forceOpenMap = false) {
   const { stationStatuses, summaryBanners } = evaluateStationStatuses(line.id, line.lineStatuses || []);
   const styleConf = LINE_COLORS[line.id] || { var: "var(--color-default)", text: "#fff" };
   const description = statusObj.reason || statusObj.disruption?.description || "";
+  const upcomingWork = getUpcomingWorkNotice(line.id);
 
   if (mainClassify.type === "good" && !forceOpenMap) {
     return `<article class="card good" style="--line-color: ${styleConf.var}; --badge-text: ${styleConf.text};">
       <div class="top">
         <div class="line-header">
           <span class="line-badge">${escapeHtml(line.name)}</span>
+          ${upcomingWork ? `<span class="planned-tag">🚧 Upcoming Works</span>` : ''}
         </div>
         <div class="status good">Good service</div>
       </div>
@@ -723,6 +749,7 @@ function cardLive(line, forceOpenMap = false) {
     <div class="top">
       <div class="line-header">
         <span class="line-badge">${escapeHtml(line.name)}</span>
+        ${upcomingWork ? `<span class="planned-tag">🚧 Upcoming Works</span>` : ''}
       </div>
       <div class="status ${mainClassify.type}">${escapeHtml(mainClassify.label)}</div>
     </div>
@@ -738,18 +765,31 @@ function cardLive(line, forceOpenMap = false) {
   </article>`;
 }
 
-// UPCOMING WORKS WITH COLOR BADGES MATCHING OFFICIAL LINE COLORS
+// UPCOMING WORKS SORTED BY DATE, EXPIRING PASSED DATES
 function loadUpcomingWorks() {
   const results = document.getElementById("results");
 
-  if (!PLANNED_SCHEDULE || PLANNED_SCHEDULE.length === 0) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Filter out works whose end date has passed
+  const activeWorks = PLANNED_SCHEDULE.filter(item => {
+    const end = new Date(item.endDate);
+    end.setHours(23, 59, 59, 999);
+    return end >= today;
+  });
+
+  if (activeWorks.length === 0) {
     results.innerHTML = `<div class="message">✓ No major planned engineering works scheduled.</div>`;
     return;
   }
 
+  // Sort chronologically by start date
+  activeWorks.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+
   let html = `<div style="font-weight: 800; font-size: 16px; margin-bottom: 14px; color: var(--text-color);">🚧 Planned Track Closures Schedule</div>`;
 
-  PLANNED_SCHEDULE.forEach(item => {
+  activeWorks.forEach(item => {
     const conf = LINE_COLORS[item.line] || { var: "var(--color-default)", text: "#fff", name: item.line.toUpperCase() };
     const fromDate = new Date(item.startDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
     const toDate = new Date(item.endDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
@@ -770,7 +810,7 @@ function loadUpcomingWorks() {
   updateRelativeTime();
 }
 
-// LIVE STATUS NETWORK OVERVIEW (STRICT OVERGROUND SEPARATION)
+// NETWORK MAP WITH DYNAMIC 7-DAY ADVANCE UPCOMING WORKS TAGS
 function renderNetworkMap(data) {
   const results = document.getElementById("results");
 
@@ -821,6 +861,7 @@ function renderNetworkMap(data) {
       const mainClassify = classify(statusObj?.statusSeverityDescription);
       const styleConf = LINE_COLORS[line.id] || { var: "var(--color-default)", text: "#fff" };
       const hasDisruption = mainClassify.type !== "good";
+      const upcomingWork = getUpcomingWorkNotice(line.id);
 
       let summaryLabel = "✓ Normal service →";
       if (hasDisruption) {
@@ -831,8 +872,9 @@ function renderNetworkMap(data) {
         <div class="network-card ${hasDisruption ? 'has-disruption' : ''}" style="--line-color: ${styleConf.var}" onclick="openLineDetailView('${line.id}')">
           <div class="line-header" style="margin-bottom: 8px;">
             <span class="line-badge">${escapeHtml(line.name)}</span>
-            <span class="status ${mainClassify.type}" style="font-size: 13px;">${escapeHtml(mainClassify.label)}</span>
+            ${upcomingWork ? `<span class="planned-tag">🚧 Upcoming Works</span>` : ''}
           </div>
+          <div class="status ${mainClassify.type}" style="font-size: 13px; text-align: left; margin-bottom: 4px;">${escapeHtml(mainClassify.label)}</div>
           <div style="font-size: 12px; color: ${hasDisruption ? 'var(--status-closed)' : 'var(--status-good)'}; font-weight: 700;">
             ${escapeHtml(summaryLabel)}
           </div>
@@ -866,8 +908,6 @@ async function loadStatus() {
   if (selectedLineDetailId) return;
 
   const results = document.getElementById("results");
-  const searchQuery = document.getElementById("search-bar").value.toLowerCase().trim();
-
   results.innerHTML = `<div class="message">Loading information…</div>`;
 
   try {
@@ -886,20 +926,6 @@ async function loadStatus() {
 
     if (currentTab === "map") {
       renderNetworkMap(data);
-    } else {
-      if (searchQuery) {
-        data = data.filter(line => {
-          const nameMatch = line.name.toLowerCase().includes(searchQuery);
-          const descMatch = (line.lineStatuses?.[0]?.reason || "").toLowerCase().includes(searchQuery);
-          return nameMatch || descMatch;
-        });
-      }
-
-      if (data.length === 0) {
-        results.innerHTML = `<div class="message">No matching lines or stations found.</div>`;
-      } else {
-        results.innerHTML = data.map(line => cardLive(line)).join("");
-      }
     }
 
     lastUpdatedTime = new Date();
@@ -927,8 +953,6 @@ document.getElementById("tab-map").addEventListener("click", (e) => {
   currentTab = "map";
   selectedLineDetailId = null;
   setActiveTab(e.target);
-  document.getElementById("search-bar").style.display = "block";
-  document.getElementById("search-bar").placeholder = "Search line or station (e.g., Stratford, Canonbury, Victoria)...";
   loadStatus();
 });
 
@@ -936,7 +960,6 @@ document.getElementById("tab-works").addEventListener("click", (e) => {
   currentTab = "works";
   selectedLineDetailId = null;
   setActiveTab(e.target);
-  document.getElementById("search-bar").style.display = "none";
   loadUpcomingWorks();
 });
 
@@ -945,7 +968,6 @@ function setActiveTab(target) {
   target.classList.add('active');
 }
 
-document.getElementById("search-bar").addEventListener("input", loadStatus);
 document.getElementById("btn-refresh").addEventListener("click", () => {
   if (currentTab === "works") {
     loadUpcomingWorks();
