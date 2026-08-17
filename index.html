@@ -255,7 +255,7 @@ let selectedLineDetailId = null;
 let lastUpdatedTime = null;
 let cachedLiveMapData = [];
 
-// EMBEDDED SCHEDULE DATA FOR UPCOMING WORKS
+// EMBEDDED SCHEDULE DATA
 const PLANNED_SCHEDULE = [
   { line: "district", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Turnham Green to Richmond" },
   { line: "dlr", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Tower Gateway to Shadwell" },
@@ -286,7 +286,6 @@ const PLANNED_SCHEDULE = [
   { line: "windrush", startDate: "2026-08-29", endDate: "2026-08-31", desc: "Windrush Line: Surrey Quays to Clapham Junction" }
 ];
 
-// HELPER TO CHECK IF LINE HAS UPCOMING WORKS IN NEXT 7 DAYS
 function getUpcomingWorkNotice(lineId) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -381,7 +380,7 @@ const INTERCHANGE_DIRECTORY = {
   "Wimbledon": ["district", "tram", "national-rail"]
 };
 
-// FULL TREE STRUCTURES
+// RESTRUCTURED TREE DEFINITION FOR ELIZABETH LINE (NO CUTOFFS ON READING BRANCH)
 const LINE_TREES = {
   "central": {
     junctions: [
@@ -430,8 +429,8 @@ const LINE_TREES = {
   },
   "elizabeth": {
     junctions: [
-      { name: "Whitechapel", splits: [["Stratford", "Maryland", "Forest Gate", "Manor Park", "Ilford", "Seven Kings", "Goodmayes", "Chadwell Heath", "Romford", "Gidea Park", "Harold Wood", "Brentwood", "Shenfield"], ["Canary Wharf", "Custom House", "Woolwich", "Abbey Wood"]] },
-      { name: "Hayes & Harlington", splits: [["Heathrow Terminals 2 & 3", "Heathrow Terminal 4", "Heathrow Terminal 5"], ["West Drayton", "Iver", "Langley", "Slough", "Burnham", "Taplow", "Maidenhead", "Twyford", "Reading"]] }
+      { name: "Hayes & Harlington", splits: [["Heathrow Terminals 2 & 3", "Heathrow Terminal 4", "Heathrow Terminal 5"], ["West Drayton", "Iver", "Langley", "Slough", "Burnham", "Taplow", "Maidenhead", "Twyford", "Reading"]] },
+      { name: "Whitechapel", splits: [["Stratford", "Maryland", "Forest Gate", "Manor Park", "Ilford", "Seven Kings", "Goodmayes", "Chadwell Heath", "Romford", "Gidea Park", "Harold Wood", "Brentwood", "Shenfield"], ["Canary Wharf", "Custom House", "Woolwich", "Abbey Wood"]] }
     ],
     trunk: ["Paddington", "Bond Street", "Tottenham Court Road", "Farringdon", "Liverpool Street"]
   }
@@ -547,7 +546,7 @@ function getInterchangeBadgesHtml(currentLineId, stationName) {
   }).join("");
 }
 
-// REDUCED TOP BUFFER SVG DIAGRAM RENDERER (EXPANDED DYNAMIC CANVAS CALCULATION FOR ELIZABETH & BRANCH LINES)
+// DYNAMIC CANVAS HEIGHT CALCULATION PREVENTS ELIZABETH LINE CUTOFFS
 function renderSVGTreeDiagram(lineId, stationStatuses) {
   const lineConf = LINE_COLORS[lineId] || { hex: "#EE7C0E" };
   const baseColor = lineConf.hex;
@@ -599,17 +598,17 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
   const tree = LINE_TREES[lineId];
   const rowHeight = 30;
   
-  // Fully calculate exact row vertical height across sequential junctions & branches
-  let calculatedRows = tree.trunk.length;
+  // ACCURATELY COMPUTE DYNAMIC HEIGHT ACROSS ALL SEQUENTIAL JUNCTIONS & LONG TERMINAL BRANCHES
+  let totalRowsCalculated = tree.trunk.length;
   tree.junctions.forEach(j => {
-    let maxBranchLen = 0;
+    let longestSplit = 0;
     j.splits.forEach(b => {
-      if (b.length > maxBranchLen) maxBranchLen = b.length;
+      if (b.length > longestSplit) longestSplit = b.length;
     });
-    calculatedRows += 2 + maxBranchLen;
+    totalRowsCalculated += 2 + longestSplit;
   });
 
-  const svgHeight = (calculatedRows * rowHeight) + 60;
+  const svgHeight = (totalRowsCalculated * rowHeight) + 80;
   let currY = 14;
 
   let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 580 ${svgHeight}" preserveAspectRatio="xMinYMin meet">`;
@@ -684,7 +683,7 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
       });
     });
 
-    currY = branchStartY + (maxBranchLen * rowHeight) + 16;
+    currY = branchStartY + (maxBranchLen * rowHeight) + 20;
   });
 
   svgHtml += `</svg>`;
@@ -835,7 +834,7 @@ function loadUpcomingWorks() {
   updateRelativeTime();
 }
 
-// LIVE STATUS NETWORK OVERVIEW (STRICT OVERGROUND & TRAM SEPARATION)
+// LIVE STATUS NETWORK OVERVIEW
 function renderNetworkMap(data) {
   const results = document.getElementById("results");
 
