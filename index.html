@@ -159,9 +159,9 @@
 
     .svg-tree-wrapper {
       width: 100%; overflow-x: auto; margin-top: 8px;
-      padding: 4px 0 10px; background: var(--card-bg); border-radius: 8px;
+      padding: 4px 0 16px; background: var(--card-bg); border-radius: 8px;
     }
-    .svg-tree-wrapper svg { display: block; }
+    .svg-tree-wrapper svg { display: block; min-width: 580px; }
 
     .works-card {
       background: var(--card-bg); border-radius: 12px; padding: 16px;
@@ -248,7 +248,6 @@ function classify(statusText) {
   return { type: "minor", label: statusText || "Unknown" };
 }
 
-// FETCH LIVE API INCLUDING TRAMS MODE
 const API_LIVE = "https://api.tfl.gov.uk/Line/Mode/tube,dlr,elizabeth-line,overground,tram/Status?detail=true";
 
 let currentTab = "map";
@@ -382,7 +381,7 @@ const INTERCHANGE_DIRECTORY = {
   "Wimbledon": ["district", "tram", "national-rail"]
 };
 
-// FULL TREE STRUCTURES INCLUDING LONDON TRAMS
+// FULL TREE STRUCTURES
 const LINE_TREES = {
   "central": {
     junctions: [
@@ -548,7 +547,7 @@ function getInterchangeBadgesHtml(currentLineId, stationName) {
   }).join("");
 }
 
-// REDUCED TOP BUFFER SVG DIAGRAM RENDERER
+// REDUCED TOP BUFFER SVG DIAGRAM RENDERER (EXPANDED DYNAMIC CANVAS CALCULATION FOR ELIZABETH & BRANCH LINES)
 function renderSVGTreeDiagram(lineId, stationStatuses) {
   const lineConf = LINE_COLORS[lineId] || { hex: "#EE7C0E" };
   const baseColor = lineConf.hex;
@@ -566,9 +565,9 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
     if (!Array.isArray(route) || route.length === 0) return '';
 
     const rowHeight = 30;
-    const svgHeight = route.length * rowHeight + 20;
+    const svgHeight = route.length * rowHeight + 30;
 
-    let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 520 ${svgHeight}">`;
+    let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 520 ${svgHeight}" preserveAspectRatio="xMinYMin meet">`;
 
     svgHtml += `<line x1="22" y1="14" x2="22" y2="${(route.length - 1) * rowHeight + 14}" stroke="${baseColor}" stroke-width="4.5" opacity="0.45" />`;
 
@@ -600,18 +599,20 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
   const tree = LINE_TREES[lineId];
   const rowHeight = 30;
   
-  let maxBranchStationCount = 0;
+  // Fully calculate exact row vertical height across sequential junctions & branches
+  let calculatedRows = tree.trunk.length;
   tree.junctions.forEach(j => {
+    let maxBranchLen = 0;
     j.splits.forEach(b => {
-      if (b.length > maxBranchStationCount) maxBranchStationCount = b.length;
+      if (b.length > maxBranchLen) maxBranchLen = b.length;
     });
+    calculatedRows += 2 + maxBranchLen;
   });
 
-  const totalCalculatedRows = tree.trunk.length + (tree.junctions.length * 2) + maxBranchStationCount + 1;
-  const svgHeight = totalCalculatedRows * rowHeight + 20;
+  const svgHeight = (calculatedRows * rowHeight) + 60;
   let currY = 14;
 
-  let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 580 ${svgHeight}">`;
+  let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 580 ${svgHeight}" preserveAspectRatio="xMinYMin meet">`;
 
   tree.trunk.forEach((st, i) => {
     const y = currY;
