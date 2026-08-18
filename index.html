@@ -533,7 +533,6 @@ const LINE_ROUTES = {
   "liberty": ["Romford", "Emerson Park", "Upminster"]
 };
 
-// EVALUATE STATION STATUSES WITH INTERMEDIATE RANGE HIGHLIGHTING
 function evaluateStationStatuses(lineId, lineStatuses) {
   const stationStatuses = new Map();
   const summaryBanners = [];
@@ -607,7 +606,6 @@ function evaluateStationStatuses(lineId, lineStatuses) {
   return { stationStatuses, summaryBanners };
 }
 
-// GENERATE INTERACTIVE CLICKABLE BUTTONS FOR TRANSFERS
 function getInterchangeBadgesHtml(currentLineId, stationName) {
   const connectingLines = INTERCHANGE_DIRECTORY[stationName];
   if (!connectingLines) return "";
@@ -630,7 +628,7 @@ function getInterchangeBadgesHtml(currentLineId, stationName) {
   return `<div class="ic-badge-container">${badges}</div>`;
 }
 
-// ROUTE MAP RENDERER WITH BOUNDED INTERCHANGE OFFSETTING PREVENTING LINE COLLISION
+// ROUTE MAP RENDERER WITH ADAPTIVE BRANCH COLUMN OFFSETS PREVENTING COLLISION
 function renderSVGTreeDiagram(lineId, stationStatuses) {
   const lineConf = LINE_COLORS[lineId] || { hex: "#EE7C0E" };
   const baseColor = lineConf.hex;
@@ -650,7 +648,7 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
     const rowHeight = 30;
     const svgHeight = route.length * rowHeight + 30;
 
-    let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 680 ${svgHeight}" preserveAspectRatio="xMinYMin meet">`;
+    let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 780 ${svgHeight}" preserveAspectRatio="xMinYMin meet">`;
 
     svgHtml += `<line x1="22" y1="14" x2="22" y2="${(route.length - 1) * rowHeight + 14}" stroke="${baseColor}" stroke-width="4.5" opacity="0.45" />`;
 
@@ -671,7 +669,7 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
 
       svgHtml += `<text x="40" y="${y + 4}" fill="${style.text}" font-size="13" font-weight="${status || isInterchange ? '700' : '600'}">${escapeHtml(st)}${style.symbol}</text>`;
       if (icBadges) {
-        svgHtml += `<foreignObject x="260" y="${y - 11}" width="380" height="22">${icBadges}</foreignObject>`;
+        svgHtml += `<foreignObject x="260" y="${y - 11}" width="480" height="22">${icBadges}</foreignObject>`;
       }
     });
 
@@ -694,7 +692,7 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
   const svgHeight = (totalRowsCalculated * rowHeight) + 120;
   let currY = 14;
 
-  let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 680 ${svgHeight}" preserveAspectRatio="xMinYMin meet">`;
+  let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 780 ${svgHeight}" preserveAspectRatio="xMinYMin meet">`;
 
   tree.trunk.forEach((st, i) => {
     const y = currY;
@@ -717,7 +715,7 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
 
     svgHtml += `<text x="50" y="${y + 4}" fill="${style.text}" font-size="13" font-weight="${status || isInterchange ? '700' : '600'}">${escapeHtml(st)}${style.symbol}</text>`;
     if (icBadges) {
-      svgHtml += `<foreignObject x="280" y="${y - 11}" width="380" height="22">${icBadges}</foreignObject>`;
+      svgHtml += `<foreignObject x="280" y="${y - 11}" width="480" height="22">${icBadges}</foreignObject>`;
     }
     currY += rowHeight;
   });
@@ -735,11 +733,12 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
     const forkStartY = jY;
     const branchStartY = jY + 28;
 
-    const xOffsets = [32, 260, 480];
+    // DYNAMIC COLUMN OFFSETS ACCOMMODATE LONGEST NAMES & BADGE COUNTS WITHOUT COLLISION
+    const xOffsets = [32, 290, 540];
     let maxBranchLen = 0;
 
     j.splits.forEach((branchStations, bIdx) => {
-      const targetX = xOffsets[bIdx] || (32 + bIdx * 220);
+      const targetX = xOffsets[bIdx] || (32 + bIdx * 250);
       if (branchStations.length > maxBranchLen) maxBranchLen = branchStations.length;
 
       svgHtml += `<path d="M 32 ${forkStartY} C 32 ${forkStartY + 18}, ${targetX} ${forkStartY + 10}, ${targetX} ${branchStartY}" stroke="${baseColor}" stroke-width="3.5" fill="none" opacity="0.5" />`;
@@ -764,8 +763,8 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
         svgHtml += `<text x="${targetX + 14}" y="${bY + 4}" fill="${bStyle.text}" font-size="12" font-weight="${bStatus || bIcBadges ? '700' : '600'}">${escapeHtml(st)}${bStyle.symbol}</text>`;
         
         if (bIcBadges) {
-          const nextTrackX = xOffsets[bIdx + 1] || 660;
-          const availableBadgeWidth = Math.max(nextTrackX - (targetX + 160), 110);
+          const nextTrackX = xOffsets[bIdx + 1] || 760;
+          const availableBadgeWidth = Math.max(nextTrackX - (targetX + 160), 100);
 
           svgHtml += `<foreignObject x="${targetX + 155}" y="${bY - 11}" width="${availableBadgeWidth}" height="22">${bIcBadges}</foreignObject>`;
         }
