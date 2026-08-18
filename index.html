@@ -157,7 +157,6 @@
     .segment-summary.minor { background: rgba(217, 119, 6, 0.15); border-left: 3px solid var(--status-minor); color: var(--status-minor); }
     .segment-summary.planned { background: rgba(217, 119, 6, 0.15); border-left: 3px solid var(--status-planned); color: var(--status-planned); }
 
-    /* COLLAPSIBLE DETAILS STYLING */
     details.upcoming-works-details, details.works-more-details {
       margin-top: 10px; background: rgba(217, 119, 6, 0.08);
       border-left: 3px solid var(--status-planned); border-radius: 0 8px 8px 0;
@@ -172,12 +171,18 @@
       width: 100%; overflow-x: auto; margin-top: 8px;
       padding: 4px 0 16px; background: var(--card-bg); border-radius: 8px;
     }
-    .svg-tree-wrapper svg { display: block; }
+    .svg-tree-wrapper svg { display: block; min-width: 580px; }
 
     .horizontal-svg-wrapper {
       width: 100%; overflow-x: auto; margin-top: 10px;
       padding: 10px 0; background: var(--card-bg); border-radius: 8px;
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--border-color); cursor: zoom-in; position: relative;
+    }
+    .horizontal-svg-wrapper::after {
+      content: "🔍 Tap map to zoom"; position: absolute; top: 6px; right: 10px;
+      font-size: 11px; font-weight: 700; color: var(--text-muted);
+      background: var(--card-bg); padding: 2px 6px; border-radius: 4px;
+      border: 1px solid var(--border-color); opacity: 0.85; pointer-events: none;
     }
     .horizontal-svg-wrapper svg { display: block; }
 
@@ -218,6 +223,31 @@
     details.raw-details summary { color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer; }
     .raw { background: var(--border-color); padding: 10px; margin-top: 8px; font-size: 13px; line-height: 1.4; border-radius: 6px; }
     .message { background: var(--card-bg); padding: 18px; border-radius: 12px; text-align: center; color: var(--text-muted); }
+
+    .zoom-modal-overlay {
+      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 16px; z-index: 2000; opacity: 0; pointer-events: none;
+      transition: opacity 0.2s ease; backdrop-filter: blur(4px);
+    }
+    .zoom-modal-overlay.open { opacity: 1; pointer-events: auto; }
+    .zoom-modal-content {
+      background: var(--card-bg); max-width: 95vw; width: 100%; max-height: 85vh;
+      border-radius: 16px; padding: 20px; overflow: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      display: flex; flex-direction: column; align-items: center; position: relative;
+    }
+    .zoom-modal-header {
+      width: 100%; display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;
+    }
+    .zoom-modal-title { font-weight: 800; font-size: 16px; color: var(--text-color); }
+    .btn-close-zoom {
+      background: var(--border-color); border: 0; font-size: 20px; font-weight: 800;
+      color: var(--text-color); border-radius: 50%; width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .zoom-svg-container { width: 100%; overflow-x: auto; padding: 10px 0; }
+    .zoom-svg-container svg { min-width: 760px; height: auto; display: block; }
   </style>
 </head>
 <body>
@@ -244,8 +274,17 @@
   <div id="results"><div class="message">Loading status…</div></div>
 </main>
 
+<div class="zoom-modal-overlay" id="zoom-modal">
+  <div class="zoom-modal-content">
+    <div class="zoom-modal-header">
+      <div class="zoom-modal-title" id="zoom-modal-title">Planned Works Route Map</div>
+      <button class="btn-close-zoom" id="btn-close-zoom">&times;</button>
+    </div>
+    <div class="zoom-svg-container" id="zoom-svg-target"></div>
+  </div>
+</div>
+
 <script>
-// CORE UTILITY FUNCTIONS
 function escapeHtml(value) {
   const div = document.createElement("div");
   div.textContent = value || "";
@@ -273,7 +312,6 @@ let selectedLineDetailId = null;
 let lastUpdatedTime = null;
 let cachedLiveMapData = [];
 
-// EMBEDDED SCHEDULE DATA
 const PLANNED_SCHEDULE = [
   { line: "district", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Turnham Green to Richmond" },
   { line: "dlr", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Tower Gateway to Shadwell" },
@@ -321,7 +359,6 @@ function getUpcomingWorkNotice(lineId) {
   });
 }
 
-// DARK MODE
 const darkModeToggle = document.getElementById("dark-mode-toggle");
 if (localStorage.getItem("tfl_dark_mode") === "true") {
   document.body.classList.add("dark-mode");
@@ -361,8 +398,9 @@ const LINE_COLORS = {
   "national-rail": { var: "var(--color-national-rail)", text: "#fff", hex: "#d2172a", name: "National Rail" }
 };
 
-// COMPREHENSIVE INTERCHANGE DIRECTORY
+// FULLY ACCURATE INTERCHANGE MAP DIRECTORY (INCLUDING NOTTING HILL GATE, FARRINGDON & ROMFORD)
 const INTERCHANGE_DIRECTORY = {
+  "Notting Hill Gate": ["central", "circle", "district"],
   "Reading": ["national-rail"],
   "Twyford": ["national-rail"],
   "Maidenhead": ["national-rail"],
@@ -408,7 +446,7 @@ const INTERCHANGE_DIRECTORY = {
   "Wimbledon": ["district", "tram", "national-rail"]
 };
 
-// FULL TREE STRUCTURES
+// FULL TREE STRUCTURES WITH ACCURATE CONTINUOUS ELIZABETH LINE LAYOUT
 const LINE_TREES = {
   "elizabeth": {
     junctions: [
@@ -416,7 +454,7 @@ const LINE_TREES = {
         name: "Hayes & Harlington", 
         splits: [
           ["Heathrow Terminals 2 & 3", "Heathrow Terminal 4", "Heathrow Terminal 5"],
-          ["Southall", "Hanwell", "West Ealing", "Ealing Broadway", "Acton Main Line", "Paddington", "Bond Street", "Tottenham Court Road", "Farringdon", "Liverpool Street"]
+          ["Southall", "Hanwell", "West Ealing", "Ealing Broadway", "Acton Main Line", "Paddington", "Bond Street", "Tottenham Court Road", "Farringdon", "Liverpool Street", "Whitechapel"]
         ] 
       },
       { 
@@ -491,7 +529,6 @@ const LINE_ROUTES = {
   "liberty": ["Romford", "Emerson Park", "Upminster"]
 };
 
-// EVALUATE STATION STATUSES
 function evaluateStationStatuses(lineId, lineStatuses) {
   const stationStatuses = new Map();
   const summaryBanners = [];
@@ -565,7 +602,6 @@ function evaluateStationStatuses(lineId, lineStatuses) {
   return { stationStatuses, summaryBanners };
 }
 
-// GENERATE INTERACTIVE CLICKABLE BUTTONS FOR TRANSFERS
 function getInterchangeBadgesHtml(currentLineId, stationName) {
   const connectingLines = INTERCHANGE_DIRECTORY[stationName];
   if (!connectingLines) return "";
@@ -586,7 +622,6 @@ function getInterchangeBadgesHtml(currentLineId, stationName) {
   }).join("");
 }
 
-// ROUTE MAP DIAGRAM
 function renderSVGTreeDiagram(lineId, stationStatuses) {
   const lineConf = LINE_COLORS[lineId] || { hex: "#EE7C0E" };
   const baseColor = lineConf.hex;
@@ -729,7 +764,6 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
   return `<div class="svg-tree-wrapper">${svgHtml}</div>`;
 }
 
-// GENERATE HORIZONTAL ROTATED SVG MAP FOR UPCOMING WORKS DETAIL
 function renderHorizontalWorksMap(lineId, descriptionText) {
   const lineConf = LINE_COLORS[lineId] || { var: "var(--color-default)", hex: "#EE7C0E", name: lineId.toUpperCase() };
   const baseColor = lineConf.hex;
@@ -775,10 +809,8 @@ function renderHorizontalWorksMap(lineId, descriptionText) {
 
   let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" preserveAspectRatio="xMinYMin meet">`;
 
-  // Draw main track line
   svgHtml += `<line x1="30" y1="${trackY}" x2="${30 + (stationList.length - 1) * colWidth}" y2="${trackY}" stroke="${baseColor}" stroke-width="5" opacity="0.3" />`;
 
-  // Highlight affected track section in Amber/Orange
   if (affectedStartIdx !== -1 && affectedEndIdx !== -1) {
     const highlightX1 = 30 + affectedStartIdx * colWidth;
     const highlightX2 = 30 + affectedEndIdx * colWidth;
@@ -803,8 +835,28 @@ function renderHorizontalWorksMap(lineId, descriptionText) {
   });
 
   svgHtml += `</svg>`;
-  return `<div class="horizontal-svg-wrapper">${svgHtml}</div>`;
+
+  const lineTitle = LINE_COLORS[lineId]?.name || "Planned Works";
+  return `<div class="horizontal-svg-wrapper" onclick="openZoomModal('${escapeHtml(lineTitle)}', this.innerHTML)">${svgHtml}</div>`;
 }
+
+function openZoomModal(title, svgMarkup) {
+  document.getElementById("zoom-modal-title").textContent = title + " - Route Map";
+  document.getElementById("zoom-svg-target").innerHTML = svgMarkup;
+  document.getElementById("zoom-modal").classList.add("open");
+}
+
+function closeZoomModal() {
+  document.getElementById("zoom-modal").classList.remove("open");
+}
+
+document.getElementById("btn-close-zoom").addEventListener("click", closeZoomModal);
+document.getElementById("zoom-modal").addEventListener("click", (e) => {
+  if (e.target === document.getElementById("zoom-modal")) closeZoomModal();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeZoomModal();
+});
 
 function openLineDetailView(lineId) {
   selectedLineDetailId = lineId;
@@ -907,7 +959,6 @@ function cardLive(line, forceOpenMap = false) {
   </article>`;
 }
 
-// UPCOMING WORKS TAB WITH MORE DETAILS TOGGLE & ROTATED TEXT HORIZONTAL MAP
 function loadUpcomingWorks() {
   const results = document.getElementById("results");
 
@@ -959,7 +1010,6 @@ function loadUpcomingWorks() {
   updateRelativeTime();
 }
 
-// LIVE STATUS NETWORK OVERVIEW
 function renderNetworkMap(data) {
   const results = document.getElementById("results");
 
