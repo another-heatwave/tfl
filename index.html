@@ -171,7 +171,7 @@
       width: 100%; overflow-x: auto; margin-top: 8px;
       padding: 4px 0 16px; background: var(--card-bg); border-radius: 8px;
     }
-    .svg-tree-wrapper svg { display: block; min-width: 580px; }
+    .svg-tree-wrapper svg { display: block; min-width: 600px; }
 
     .horizontal-svg-wrapper {
       width: 100%; overflow-x: auto; margin-top: 10px;
@@ -196,10 +196,10 @@
 
     .ic-btn {
       display: inline-flex; align-items: center; justify-content: center;
-      font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px;
+      font-size: 10px; font-weight: 800; padding: 2px 5px; border-radius: 4px;
       color: #fff; border: 0; cursor: pointer; text-transform: uppercase;
       vertical-align: middle; transition: opacity 0.15s ease, transform 0.15s ease;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.2); margin-left: 3px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2); margin-left: 3px; margin-right: 1px;
     }
     .ic-btn:hover { opacity: 0.85; transform: scale(1.05); }
 
@@ -312,6 +312,7 @@ let selectedLineDetailId = null;
 let lastUpdatedTime = null;
 let cachedLiveMapData = [];
 
+// EMBEDDED SCHEDULE DATA
 const PLANNED_SCHEDULE = [
   { line: "district", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Turnham Green to Richmond" },
   { line: "dlr", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Tower Gateway to Shadwell" },
@@ -359,6 +360,7 @@ function getUpcomingWorkNotice(lineId) {
   });
 }
 
+// DARK MODE
 const darkModeToggle = document.getElementById("dark-mode-toggle");
 if (localStorage.getItem("tfl_dark_mode") === "true") {
   document.body.classList.add("dark-mode");
@@ -398,28 +400,28 @@ const LINE_COLORS = {
   "national-rail": { var: "var(--color-national-rail)", text: "#fff", hex: "#d2172a", name: "National Rail" }
 };
 
-// FULLY ACCURATE INTERCHANGE MAP DIRECTORY (INCLUDING NOTTING HILL GATE, FARRINGDON & ROMFORD)
+// COMPREHENSIVE INTERCHANGE DIRECTORY (INCLUDING NOTTING HILL GATE, EALING BROADWAY, SHEPHERD'S BUSH)
 const INTERCHANGE_DIRECTORY = {
+  "Ealing Broadway": ["central", "district", "elizabeth", "national-rail"],
   "Notting Hill Gate": ["central", "circle", "district"],
+  "Shepherd's Bush": ["central", "mildmay", "national-rail"],
   "Reading": ["national-rail"],
   "Twyford": ["national-rail"],
   "Maidenhead": ["national-rail"],
   "Slough": ["national-rail"],
   "Hayes & Harlington": ["national-rail"],
-  "Ealing Broadway": ["central", "district", "national-rail"],
-  "Paddington": ["bakerloo", "circle", "district", "hammersmith-city", "national-rail"],
-  "Bond Street": ["central", "jubilee"],
-  "Tottenham Court Road": ["central", "northern"],
-  "Farringdon": ["circle", "hammersmith-city", "metropolitan", "national-rail"],
-  "Liverpool Street": ["central", "circle", "hammersmith-city", "metropolitan", "weaver", "national-rail"],
-  "Whitechapel": ["district", "hammersmith-city", "windrush"],
-  "Stratford": ["central", "jubilee", "mildmay", "dlr", "national-rail"],
-  "Romford": ["liberty", "national-rail"],
-  "Shenfield": ["national-rail"],
-  "Canary Wharf": ["jubilee", "dlr"],
-  "Custom House": ["dlr"],
-  "Woolwich": ["national-rail"],
-  "Shepherd's Bush": ["central", "mildmay", "national-rail"],
+  "Paddington": ["bakerloo", "circle", "district", "hammersmith-city", "elizabeth", "national-rail"],
+  "Bond Street": ["central", "jubilee", "elizabeth"],
+  "Tottenham Court Road": ["central", "northern", "elizabeth"],
+  "Farringdon": ["circle", "hammersmith-city", "metropolitan", "elizabeth", "national-rail"],
+  "Liverpool Street": ["central", "circle", "hammersmith-city", "metropolitan", "elizabeth", "weaver", "national-rail"],
+  "Whitechapel": ["district", "hammersmith-city", "elizabeth", "windrush"],
+  "Stratford": ["central", "jubilee", "elizabeth", "mildmay", "dlr", "national-rail"],
+  "Romford": ["elizabeth", "liberty", "national-rail"],
+  "Shenfield": ["elizabeth", "national-rail"],
+  "Canary Wharf": ["jubilee", "elizabeth", "dlr"],
+  "Custom House": ["elizabeth", "dlr"],
+  "Woolwich": ["elizabeth", "national-rail"],
   "Oxford Circus": ["bakerloo", "central", "victoria"],
   "King's Cross St Pancras": ["circle", "hammersmith-city", "metropolitan", "northern", "piccadilly", "victoria", "national-rail"],
   "Baker Street": ["bakerloo", "circle", "hammersmith-city", "jubilee", "metropolitan"],
@@ -446,7 +448,7 @@ const INTERCHANGE_DIRECTORY = {
   "Wimbledon": ["district", "tram", "national-rail"]
 };
 
-// FULL TREE STRUCTURES WITH ACCURATE CONTINUOUS ELIZABETH LINE LAYOUT
+// FULL TREE STRUCTURES
 const LINE_TREES = {
   "elizabeth": {
     junctions: [
@@ -529,6 +531,7 @@ const LINE_ROUTES = {
   "liberty": ["Romford", "Emerson Park", "Upminster"]
 };
 
+// EVALUATE STATION STATUSES
 function evaluateStationStatuses(lineId, lineStatuses) {
   const stationStatuses = new Map();
   const summaryBanners = [];
@@ -602,6 +605,7 @@ function evaluateStationStatuses(lineId, lineStatuses) {
   return { stationStatuses, summaryBanners };
 }
 
+// GENERATE INTERACTIVE CLICKABLE BUTTONS FOR TRANSFERS
 function getInterchangeBadgesHtml(currentLineId, stationName) {
   const connectingLines = INTERCHANGE_DIRECTORY[stationName];
   if (!connectingLines) return "";
@@ -622,6 +626,7 @@ function getInterchangeBadgesHtml(currentLineId, stationName) {
   }).join("");
 }
 
+// FULLY CALCULATION SVG ROUTE RENDERER (WIDER VIEWBOX PREVENTS INTERCHANGE CLIPPING)
 function renderSVGTreeDiagram(lineId, stationStatuses) {
   const lineConf = LINE_COLORS[lineId] || { hex: "#EE7C0E" };
   const baseColor = lineConf.hex;
@@ -641,7 +646,7 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
     const rowHeight = 30;
     const svgHeight = route.length * rowHeight + 30;
 
-    let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 520 ${svgHeight}" preserveAspectRatio="xMinYMin meet">`;
+    let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 680 ${svgHeight}" preserveAspectRatio="xMinYMin meet">`;
 
     svgHtml += `<line x1="22" y1="14" x2="22" y2="${(route.length - 1) * rowHeight + 14}" stroke="${baseColor}" stroke-width="4.5" opacity="0.45" />`;
 
@@ -662,7 +667,7 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
 
       svgHtml += `<text x="40" y="${y + 4}" fill="${style.text}" font-size="13" font-weight="${status || isInterchange ? '700' : '600'}">${escapeHtml(st)}${style.symbol}</text>`;
       if (icBadges) {
-        svgHtml += `<foreignObject x="260" y="${y - 11}" width="250" height="22">${icBadges}</foreignObject>`;
+        svgHtml += `<foreignObject x="260" y="${y - 11}" width="400" height="22">${icBadges}</foreignObject>`;
       }
     });
 
@@ -685,7 +690,7 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
   const svgHeight = (totalRowsCalculated * rowHeight) + 120;
   let currY = 14;
 
-  let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 580 ${svgHeight}" preserveAspectRatio="xMinYMin meet">`;
+  let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 680 ${svgHeight}" preserveAspectRatio="xMinYMin meet">`;
 
   tree.trunk.forEach((st, i) => {
     const y = currY;
@@ -708,7 +713,7 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
 
     svgHtml += `<text x="50" y="${y + 4}" fill="${style.text}" font-size="13" font-weight="${status || isInterchange ? '700' : '600'}">${escapeHtml(st)}${style.symbol}</text>`;
     if (icBadges) {
-      svgHtml += `<foreignObject x="280" y="${y - 11}" width="280" height="22">${icBadges}</foreignObject>`;
+      svgHtml += `<foreignObject x="280" y="${y - 11}" width="380" height="22">${icBadges}</foreignObject>`;
     }
     currY += rowHeight;
   });
@@ -753,6 +758,9 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
         }
 
         svgHtml += `<text x="${targetX + 14}" y="${bY + 4}" fill="${bStyle.text}" font-size="12" font-weight="${bStatus || bIcBadges ? '700' : '600'}">${escapeHtml(st)}${bStyle.symbol}</text>`;
+        if (bIcBadges) {
+          svgHtml += `<foreignObject x="${targetX + 180}" y="${bY - 11}" width="200" height="22">${bIcBadges}</foreignObject>`;
+        }
         bY += rowHeight;
       });
     });
