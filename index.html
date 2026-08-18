@@ -157,18 +157,36 @@
     .segment-summary.minor { background: rgba(217, 119, 6, 0.15); border-left: 3px solid var(--status-minor); color: var(--status-minor); }
     .segment-summary.planned { background: rgba(217, 119, 6, 0.15); border-left: 3px solid var(--status-planned); color: var(--status-planned); }
 
+    /* COLLAPSIBLE DETAILS STYLING */
+    details.upcoming-works-details, details.works-more-details {
+      margin-top: 10px; background: rgba(217, 119, 6, 0.08);
+      border-left: 3px solid var(--status-planned); border-radius: 0 8px 8px 0;
+      padding: 6px 12px;
+    }
+    details.works-more-details summary {
+      cursor: pointer; outline: none; user-select: none;
+      font-size: 13px; font-weight: 700; color: var(--status-planned);
+    }
+
     .svg-tree-wrapper {
       width: 100%; overflow-x: auto; margin-top: 8px;
       padding: 4px 0 16px; background: var(--card-bg); border-radius: 8px;
     }
-    .svg-tree-wrapper svg { display: block; min-width: 580px; }
+    .svg-tree-wrapper svg { display: block; }
+
+    .horizontal-svg-wrapper {
+      width: 100%; overflow-x: auto; margin-top: 10px;
+      padding: 10px 0; background: var(--card-bg); border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+    .horizontal-svg-wrapper svg { display: block; }
 
     .works-card {
       background: var(--card-bg); border-radius: 12px; padding: 16px;
       margin-bottom: 12px; border-left: 6px solid var(--status-planned);
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     }
-    .works-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
+    .works-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 6px; }
     .works-date { font-size: 12px; font-weight: 800; background: rgba(217, 119, 6, 0.15); color: var(--status-planned); padding: 4px 8px; border-radius: 6px; }
 
     .ic-btn {
@@ -343,7 +361,7 @@ const LINE_COLORS = {
   "national-rail": { var: "var(--color-national-rail)", text: "#fff", hex: "#d2172a", name: "National Rail" }
 };
 
-// FULLY ACCURATE INTERCHANGE MAP DIRECTORY
+// COMPREHENSIVE INTERCHANGE DIRECTORY
 const INTERCHANGE_DIRECTORY = {
   "Reading": ["national-rail"],
   "Twyford": ["national-rail"],
@@ -390,7 +408,7 @@ const INTERCHANGE_DIRECTORY = {
   "Wimbledon": ["district", "tram", "national-rail"]
 };
 
-// FULL TREE STRUCTURES WITH ACCURATE CONTINUOUS ELIZABETH LINE LAYOUT
+// FULL TREE STRUCTURES
 const LINE_TREES = {
   "elizabeth": {
     junctions: [
@@ -568,7 +586,7 @@ function getInterchangeBadgesHtml(currentLineId, stationName) {
   }).join("");
 }
 
-// FULLY CALCULATION SVG ROUTE RENDERER
+// ROUTE MAP DIAGRAM
 function renderSVGTreeDiagram(lineId, stationStatuses) {
   const lineConf = LINE_COLORS[lineId] || { hex: "#EE7C0E" };
   const baseColor = lineConf.hex;
@@ -711,6 +729,83 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
   return `<div class="svg-tree-wrapper">${svgHtml}</div>`;
 }
 
+// GENERATE HORIZONTAL ROTATED SVG MAP FOR UPCOMING WORKS DETAIL
+function renderHorizontalWorksMap(lineId, descriptionText) {
+  const lineConf = LINE_COLORS[lineId] || { var: "var(--color-default)", hex: "#EE7C0E", name: lineId.toUpperCase() };
+  const baseColor = lineConf.hex;
+
+  let stationList = [];
+  if (LINE_TREES[lineId]) {
+    const tree = LINE_TREES[lineId];
+    stationList = [...tree.trunk];
+    tree.junctions.forEach(j => {
+      stationList.push(j.name);
+      j.splits.forEach(b => stationList.push(...b));
+    });
+  } else {
+    stationList = LINE_ROUTES[lineId] || [];
+  }
+
+  if (stationList.length === 0) return "";
+
+  const lowerDesc = (descriptionText || "").toLowerCase();
+  const closedRegex = /(?:no service|suspended|part closure|closed|part suspended|between)\s+([a-z0-9\s&'-]+?)\s+(?:and|to)\s+([a-z0-9\s&'-]+?)(?=\s+due|\s+while|\s+and|\.|$)/gi;
+  let match = closedRegex.exec(lowerDesc);
+
+  let affectedStartIdx = -1;
+  let affectedEndIdx = -1;
+
+  if (match) {
+    const startStr = cleanStationName(match[1]);
+    const endStr = cleanStationName(match[2]);
+
+    const idxA = stationList.findIndex(s => cleanStationName(s) === startStr || cleanStationName(s).includes(startStr));
+    const idxB = stationList.findIndex(s => cleanStationName(s) === endStr || cleanStationName(s).includes(endStr));
+
+    if (idxA !== -1 && idxB !== -1) {
+      affectedStartIdx = Math.min(idxA, idxB);
+      affectedEndIdx = Math.max(idxA, idxB);
+    }
+  }
+
+  const colWidth = 45;
+  const svgWidth = Math.max(stationList.length * colWidth + 60, 580);
+  const trackY = 40;
+  const svgHeight = 160;
+
+  let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" preserveAspectRatio="xMinYMin meet">`;
+
+  // Draw main track line
+  svgHtml += `<line x1="30" y1="${trackY}" x2="${30 + (stationList.length - 1) * colWidth}" y2="${trackY}" stroke="${baseColor}" stroke-width="5" opacity="0.3" />`;
+
+  // Highlight affected track section in Amber/Orange
+  if (affectedStartIdx !== -1 && affectedEndIdx !== -1) {
+    const highlightX1 = 30 + affectedStartIdx * colWidth;
+    const highlightX2 = 30 + affectedEndIdx * colWidth;
+    svgHtml += `<line x1="${highlightX1}" y1="${trackY}" x2="${highlightX2}" y2="${trackY}" stroke="var(--status-planned)" stroke-width="6" />`;
+  }
+
+  stationList.forEach((st, i) => {
+    const x = 30 + i * colWidth;
+    const isAffected = (i >= affectedStartIdx && i <= affectedEndIdx) || (affectedStartIdx === -1 && lowerDesc.includes(cleanStationName(st)));
+
+    let dotFill = "#ffffff", dotStroke = baseColor, textColor = "var(--text-muted)", tagSymbol = "";
+
+    if (isAffected) {
+      dotFill = "var(--status-planned)";
+      dotStroke = "var(--status-planned)";
+      textColor = "var(--status-planned)";
+      tagSymbol = " 🚧";
+    }
+
+    svgHtml += `<circle cx="${x}" cy="${trackY}" r="${isAffected ? 6.5 : 5}" fill="${dotFill}" stroke="${dotStroke}" stroke-width="2.5" />`;
+    svgHtml += `<text x="${x}" y="${trackY + 16}" fill="${textColor}" font-size="11" font-weight="${isAffected ? '700' : '600'}" transform="rotate(45, ${x}, ${trackY + 16})" text-anchor="start">${escapeHtml(st)}${tagSymbol}</text>`;
+  });
+
+  svgHtml += `</svg>`;
+  return `<div class="horizontal-svg-wrapper">${svgHtml}</div>`;
+}
+
 function openLineDetailView(lineId) {
   selectedLineDetailId = lineId;
   let lineData = cachedLiveMapData.find(l => l.id === lineId);
@@ -754,15 +849,15 @@ function cardLive(line, forceOpenMap = false) {
     const toDate = new Date(upcomingWork.endDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
 
     upcomingWorkBannerHtml = `
-      <div class="segment-summary planned" style="margin-top: 12px; background: rgba(217, 119, 6, 0.12); border-left: 4px solid var(--status-planned); padding: 10px 12px;">
-        <div style="font-weight: 800; font-size: 13px; color: var(--status-planned); display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+      <details class="upcoming-works-details">
+        <summary style="font-weight: 800; font-size: 13px; color: var(--status-planned); display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
           <span>🚧 Upcoming Works Notice</span>
-          <span style="font-size: 12px; opacity: 0.9;">📅 ${escapeHtml(fromDate)} — ${escapeHtml(toDate)}</span>
-        </div>
-        <div style="font-size: 13px; font-weight: 600; color: var(--text-color); line-height: 1.4;">
+          <span style="font-size: 12px; opacity: 0.9; margin-left: 8px;">📅 ${escapeHtml(fromDate)} — ${escapeHtml(toDate)}</span>
+        </summary>
+        <div style="font-size: 13px; font-weight: 600; color: var(--text-color); line-height: 1.4; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(217, 119, 6, 0.2);">
           ${escapeHtml(upcomingWork.desc)}
         </div>
-      </div>
+      </details>
     `;
   }
 
@@ -812,7 +907,7 @@ function cardLive(line, forceOpenMap = false) {
   </article>`;
 }
 
-// UPCOMING WORKS SORTED BY DATE, EXPIRING PASSED DATES
+// UPCOMING WORKS TAB WITH MORE DETAILS TOGGLE & ROTATED TEXT HORIZONTAL MAP
 function loadUpcomingWorks() {
   const results = document.getElementById("results");
 
@@ -839,13 +934,22 @@ function loadUpcomingWorks() {
     const fromDate = new Date(item.startDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
     const toDate = new Date(item.endDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 
+    const horizontalMapSvg = renderHorizontalWorksMap(item.line, item.desc);
+
     html += `
       <div class="works-card">
         <div class="works-header">
           <span class="line-badge" style="background:${conf.hex}; color:${conf.text};">${escapeHtml(conf.name)}</span>
           <span class="works-date">📅 ${escapeHtml(fromDate)} — ${escapeHtml(toDate)}</span>
         </div>
-        <div style="font-size: 13px; line-height: 1.4; color: var(--text-color); margin-top: 6px;">${escapeHtml(item.desc)}</div>
+        
+        <details class="works-more-details">
+          <summary>More details</summary>
+          <div style="font-size: 13px; line-height: 1.4; color: var(--text-color); margin-top: 8px;">
+            ${escapeHtml(item.desc)}
+          </div>
+          ${horizontalMapSvg}
+        </details>
       </div>
     `;
   });
