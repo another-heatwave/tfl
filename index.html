@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111111">
+  <title>TfL Status Simplified</title>
+  <style>
+    :root {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --bg-color: #f2f2f2;
+      --card-bg: #ffffff;
+      --text-color: #111111;
+      --text-muted: #555555;
+      --border-color: #eeeeee;
+      --input-bg: #ffffff;
+      --toolbar-bg: #eaeaea;
+      
+      /* TfL Official Line Colors */
+      --color-bakerloo: #B16300;
+      --color-central: #E32017;
+      --color-circle: #FFD300;
+      --color-district: #00782A;
+      --color-hammersmith-city: #F589A6;
+      --color-jubilee: #A0A5A9;
+      --color-metropolitan: #9B0056;
+      --color-northern: #000000;
+      --color-piccadilly: #0019A8;
+      --color-victoria: #0098D4;
+      --color-waterloo-city: #95CDBA;
+      --color-dlr: #00A4A6;
+      --color-elizabeth: #6950A1;
+      --color-tram: #84B817;
+      --color-national-rail: #d2172a;
+      
+      /* Overground Named Line Colors */
+      --color-mildmay: #2774ae;
+      --color-windrush: #d22730;
+      --color-weaver: #893b67;
+      --color-suffragette: #5ba763;
+      --color-lioness: #ef9600;
+      --color-liberty: #606667;
+      --color-default: #EE7C0E;
+
+      /* Status Palette */
+      --status-closed: #c62828;
+      --status-severe: #e65100;
+      --status-minor: #d97706;
+      --status-good: #148a36;
+      --status-planned: #d97706;
+    }
+
+    body.dark-mode {
+      --bg-color: #121212;
+      --card-bg: #1e1e1e;
+      --text-color: #f0f0f0;
+      --text-muted: #bbbbbb;
+      --border-color: #2c2c2c;
+      --input-bg: #2a2a2a;
+      --toolbar-bg: #1a1a1a;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg-color); color: var(--text-color);
+      min-height: 100vh; display: flex; flex-direction: column;
+      transition: background 0.2s ease, color 0.2s ease;
+      font-size: 15px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    header {
+      background: #111; color: white;
+      padding: calc(18px + env(safe-area-inset-top)) 18px 18px;
+    }
+    header h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.3px; }
+    header p { margin: 5px 0 0; color: #d0d0d0; font-size: 14px; }
+    
+    .tab-bar {
+      display: flex; background: #222; padding: 4px;
+      margin-top: 14px; border-radius: 10px; flex-wrap: wrap; gap: 4px;
+    }
+    .tab-btn {
+      flex: 1; background: transparent; color: #aaa; border: 0;
+      padding: 10px 6px; font-size: 14px; font-weight: 700; cursor: pointer;
+      border-radius: 8px; transition: all 0.2s ease; text-align: center; white-space: nowrap;
+    }
+    .tab-btn.active { background: #fff; color: #111; }
+
+    main { max-width: 840px; width: 100%; margin: auto; padding: 16px; flex: 1; }
+    
+    .toolbar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 14px; background: var(--card-bg); padding: 10px 14px;
+      border-radius: 10px; border: 1px solid var(--border-color);
+    }
+
+    .controls { display: flex; align-items: center; gap: 12px; }
+    .toggle-theme {
+      font-size: 14px; font-weight: 600; cursor: pointer; user-select: none;
+      display: flex; align-items: center; gap: 6px;
+    }
+    #updated { color: var(--text-muted); font-size: 13px; font-weight: 600; }
+    
+    button.btn-refresh {
+      border: 0; border-radius: 8px; padding: 8px 14px;
+      font-weight: 700; cursor: pointer; background: #111; color: white;
+      font-size: 14px; display: inline-flex; align-items: center; gap: 6px;
+      transition: background 0.2s ease;
+    }
+    body.dark-mode button.btn-refresh { background: #333; }
+    button.btn-refresh:hover { opacity: 0.9; }
+
+    button.btn-back {
+      border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 14px;
+      font-weight: 700; cursor: pointer; background: var(--card-bg); color: var(--text-color);
+      font-size: 14px; margin-bottom: 14px; display: inline-flex; align-items: center; gap: 6px;
+    }
+
+    .card {
+      background: var(--card-bg); border-radius: 12px; margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08); overflow: hidden;
+      border-left: 8px solid var(--line-color, var(--color-default));
+    }
+    .top {
+      padding: 14px 15px; display: flex; justify-content: space-between;
+      gap: 12px; align-items: center;
+    }
+    .line-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    
+    .line-badge {
+      background: var(--line-color, var(--color-default));
+      color: var(--badge-text, #fff); font-size: 14px; font-weight: 800;
+      padding: 6px 12px; border-radius: 6px; display: inline-block; letter-spacing: 0.2px;
+    }
+
+    .planned-tag {
+      background: rgba(217, 119, 6, 0.15); color: var(--status-planned);
+      border: 1px solid var(--status-planned); font-size: 11px; font-weight: 800;
+      padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;
+    }
+
+    .status { font-size: 14px; font-weight: 800; text-align: right; }
+    .status.good { color: var(--status-good); }
+    .status.closed { color: var(--status-closed); }
+    .status.severe { color: var(--status-severe); }
+    .status.minor { color: var(--status-minor); }
+    .status.planned { color: var(--status-planned); }
+    
+    .details { padding: 0 15px 15px; border-top: 1px solid var(--border-color); }
+
+    .segment-summary {
+      font-size: 14px; font-weight: 700; padding: 8px 12px;
+      border-radius: 0 6px 6px 0; margin-top: 12px;
+    }
+    .segment-summary.closed { background: rgba(198, 40, 40, 0.15); border-left: 3px solid var(--status-closed); color: var(--status-closed); }
+    .segment-summary.severe { background: rgba(230, 81, 0, 0.15); border-left: 3px solid var(--status-severe); color: var(--status-severe); }
+    .segment-summary.minor { background: rgba(217, 119, 6, 0.15); border-left: 3px solid var(--status-minor); color: var(--status-minor); }
+    .segment-summary.planned { background: rgba(217, 119, 6, 0.15); border-left: 3px solid var(--status-planned); color: var(--status-planned); }
+
+    details.upcoming-works-details, details.works-more-details {
+      margin-top: 10px; background: rgba(217, 119, 6, 0.08);
+      border-left: 3px solid var(--status-planned); border-radius: 0 8px 8px 0;
+      padding: 6px 12px;
+    }
+    details.works-more-details summary {
+      cursor: pointer; outline: none; user-select: none;
+      font-size: 13px; font-weight: 700; color: var(--status-planned);
+    }
+
+    .svg-tree-wrapper {
+      width: 100%; overflow-x: auto; margin-top: 8px;
+      padding: 8px 0 16px; background: var(--card-bg); border-radius: 8px;
+    }
+    .svg-tree-wrapper svg { display: block; }
+
+    .horizontal-svg-wrapper {
+      width: 100%; overflow-x: auto; margin-top: 10px;
+      padding: 10px 0; background: var(--card-bg); border-radius: 8px;
+      border: 1px solid var(--border-color); cursor: zoom-in; position: relative;
+    }
+    .horizontal-svg-wrapper::after {
+      content: "🔍 Tap map to zoom"; position: absolute; top: 6px; right: 10px;
+      font-size: 11px; font-weight: 700; color: var(--text-muted);
+      background: var(--card-bg); padding: 2px 6px; border-radius: 4px;
+      border: 1px solid var(--border-color); opacity: 0.85; pointer-events: none;
+    }
+    .horizontal-svg-wrapper svg { display: block; }
+
+    .works-card {
+      background: var(--card-bg); border-radius: 12px; padding: 16px;
+      margin-bottom: 12px; border-left: 6px solid var(--status-planned);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .works-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 6px; }
+    .works-date { font-size: 12px; font-weight: 800; background: rgba(217, 119, 6, 0.15); color: var(--status-planned); padding: 4px 8px; border-radius: 6px; }
+
+    .ic-badge-container {
+      display: flex; flex-wrap: wrap; gap: 2px; align-items: center;
+      max-width: 100%; height: 100%; overflow: hidden;
+    }
+
+    .ic-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 9.5px; font-weight: 800; padding: 2px 5px; border-radius: 4px;
+      color: #fff; border: 0; cursor: pointer; text-transform: uppercase;
+      vertical-align: middle; transition: opacity 0.15s ease, transform 0.15s ease;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2); margin: 1px 2px; line-height: 1.2;
+    }
+    .ic-btn:hover { opacity: 0.85; transform: scale(1.05); }
+
+    .network-container { background: var(--card-bg); border-radius: 12px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .network-title { font-size: 18px; font-weight: 800; margin-bottom: 12px; }
+    .network-section-heading {
+      font-size: 14px; font-weight: 800; text-transform: uppercase;
+      color: var(--text-muted); margin: 20px 0 10px; letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border-color); padding-bottom: 6px;
+    }
+    .network-section-heading:first-of-type { margin-top: 0; }
+
+    .network-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+    .network-card {
+      border: 2px solid var(--border-color); border-radius: 10px; padding: 14px; cursor: pointer; transition: all 0.2s ease;
+      border-left: 6px solid var(--line-color, var(--color-default)); background: var(--card-bg);
+    }
+    .network-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--text-muted); }
+
+    details.raw-details { margin-top: 10px; }
+    details.raw-details summary { color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer; }
+    .raw { background: var(--border-color); padding: 10px; margin-top: 8px; font-size: 13px; line-height: 1.4; border-radius: 6px; }
+    .message { background: var(--card-bg); padding: 18px; border-radius: 12px; text-align: center; color: var(--text-muted); }
+
+    .zoom-modal-overlay {
+      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 16px; z-index: 2000; opacity: 0; pointer-events: none;
+      transition: opacity 0.2s ease; backdrop-filter: blur(4px);
+    }
+    .zoom-modal-overlay.open { opacity: 1; pointer-events: auto; }
+    .zoom-modal-content {
+      background: var(--card-bg); max-width: 95vw; width: 100%; max-height: 85vh;
+      border-radius: 16px; padding: 20px; overflow: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      display: flex; flex-direction: column; align-items: center; position: relative;
+    }
+    .zoom-modal-header {
+      width: 100%; display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;
+    }
+    .zoom-modal-title { font-weight: 800; font-size: 16px; color: var(--text-color); }
+    .btn-close-zoom {
+      background: var(--border-color); border: 0; font-size: 20px; font-weight: 800;
+      color: var(--text-color); border-radius: 50%; width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .zoom-svg-container { width: 100%; overflow-x: auto; padding: 10px 0; }
+    .zoom-svg-container svg { min-width: 760px; height: auto; display: block; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>TfL Status Simplified</h1>
+  <p>See which parts of a line are affected, without deciphering TfL's wording.</p>
+  
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tab-map">Live Status</button>
+    <button class="tab-btn" id="tab-works">Upcoming Works</button>
+  </div>
+</header>
+
+<main>
+  <div class="toolbar" id="toolbar">
+    <div class="controls">
+      <button class="btn-refresh" id="btn-refresh">🔄 Refresh Status</button>
+      <label class="toggle-theme">
+        <input type="checkbox" id="dark-mode-toggle"> 🌙 Dark Mode
+      </label>
+    </div>
+    <div id="updated">Loading…</div>
+  </div>
+  <div id="results"><div class="message">Loading status…</div></div>
+</main>
+
+<div class="zoom-modal-overlay" id="zoom-modal">
+  <div class="zoom-modal-content">
+    <div class="zoom-modal-header">
+      <div class="zoom-modal-title" id="zoom-modal-title">Planned Works Route Map</div>
+      <button class="btn-close-zoom" id="btn-close-zoom">&times;</button>
+    </div>
+    <div class="zoom-svg-container" id="zoom-svg-target"></div>
+  </div>
+</div>
+
+<script>
+function escapeHtml(value) {
+  const div = document.createElement("div");
+  div.textContent = value || "";
+  return div.innerHTML;
+}
+
+function cleanStationName(str) {
+  return str.toLowerCase().replace(/\s*(station|underground station|rail station|line)\s*/gi, '').trim();
+}
+
+function classify(statusText) {
+  const lower = (statusText || "").toLowerCase();
+  if (lower.includes("good")) return { type: "good", label: "Good service" };
+  if (lower.includes("planned") || lower.includes("work")) return { type: "planned", label: statusText };
+  if (lower.includes("no service") || lower.includes("suspended") || lower.includes("part closure") || lower.includes("closure")) return { type: "closed", label: statusText };
+  if (lower.includes("severe")) return { type: "severe", label: statusText };
+  if (lower.includes("minor") || lower.includes("delays") || lower.includes("reduced")) return { type: "minor", label: statusText };
+  return { type: "minor", label: statusText || "Unknown" };
+}
+
+const API_LIVE = "https://api.tfl.gov.uk/Line/Mode/tube,dlr,elizabeth-line,overground,tram/Status?detail=true";
+
+let currentTab = "map";
+let selectedLineDetailId = null;
+let lastUpdatedTime = null;
+let cachedLiveMapData = [];
+
+// SCHEDULE DATA
+const PLANNED_SCHEDULE = [
+  { line: "district", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Turnham Green to Richmond" },
+  { line: "dlr", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Tower Gateway to Shadwell" },
+  { line: "elizabeth", startDate: "2026-08-16", endDate: "2026-08-16", desc: "West Drayton to Slough (until 09:00)" },
+  { line: "mildmay", startDate: "2026-08-11", endDate: "2026-08-14", desc: "Mildmay Line: Willesden Junction to Shepherd's Bush (Southbound only, until 06:15)" },
+  { line: "mildmay", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Mildmay Line: Willesden Junction to Richmond" },
+  { line: "windrush", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Windrush Line: Wandsworth Road to Clapham Junction" },
+  { line: "tram", startDate: "2026-08-10", endDate: "2026-08-30", desc: "Reeves Corner to East Croydon" },
+  { line: "circle", startDate: "2026-08-22", endDate: "2026-08-22", desc: "No service on entire line until 10:30; Edgware Road to Tower Hill via Victoria until 14:00" },
+  { line: "district", startDate: "2026-08-22", endDate: "2026-08-22", desc: "No service on entire line until 10:30; Edgware Road/Embankment to Ealing Broadway, Olympia, Richmond & Wimbledon until 14:00" },
+  { line: "district", startDate: "2026-08-22", endDate: "2026-08-23", desc: "Stamford Brook to Barons Court (EB), Earl's Court to Stamford Brook (WB), Earl's Court to Olympia, Fulham Broadway to Wimbledon (all after 14:00 Sat & all day Sun)" },
+  { line: "hammersmith-city", startDate: "2026-08-22", endDate: "2026-08-22", desc: "No service on entire line until 10:30" },
+  { line: "metropolitan", startDate: "2026-08-22", endDate: "2026-08-22", desc: "Aldgate to Harrow-on-the-Hill until 10:30" },
+  { line: "piccadilly", startDate: "2026-08-18", endDate: "2026-08-20", desc: "Cockfosters to Uxbridge" },
+  { line: "piccadilly", startDate: "2026-08-21", endDate: "2026-08-22", desc: "No service during Friday Night Tube" },
+  { line: "piccadilly", startDate: "2026-08-21", endDate: "2026-08-24", desc: "Eastbound trains will not stop at Caledonian Road" },
+  { line: "piccadilly", startDate: "2026-08-22", endDate: "2026-08-22", desc: "Hyde Park Corner to Acton Town until 14:00" },
+  { line: "elizabeth", startDate: "2026-08-22", endDate: "2026-08-23", desc: "Acton Main Line, Hanwell and West Ealing: Trains will not stop after 23:00 Sat until 09:00 Sun" },
+  { line: "elizabeth", startDate: "2026-08-23", endDate: "2026-08-23", desc: "West Drayton to Maidenhead until 08:15" },
+  { line: "mildmay", startDate: "2026-08-23", endDate: "2026-08-23", desc: "Mildmay Line: Willesden Junction to Clapham Junction until 09:30; Camden Road to Stratford after 22:15" },
+  { line: "weaver", startDate: "2026-08-17", endDate: "2026-08-20", desc: "Weaver Line: Hackney Downs to Chingford after 22:45" },
+  { line: "windrush", startDate: "2026-08-23", endDate: "2026-08-23", desc: "Windrush Line: New Cross Gate to Crystal Palace & West Croydon; Highbury & Islington to Dalston Junction after 22:15" },
+  { line: "northern", startDate: "2026-08-28", endDate: "2026-08-29", desc: "Camden Town to High Barnet during Friday Night Tube" },
+  { line: "northern", startDate: "2026-08-29", endDate: "2026-08-31", desc: "Archway to High Barnet and Mill Hill East (inc. Sat Night Tube)" },
+  { line: "piccadilly", startDate: "2026-08-25", endDate: "2026-08-27", desc: "Cockfosters to Uxbridge" },
+  { line: "dlr", startDate: "2026-08-30", endDate: "2026-08-31", desc: "Tower Gateway to Shadwell" },
+  { line: "weaver", startDate: "2026-08-31", endDate: "2026-08-31", desc: "Weaver Line: Hackney Downs to Enfield Town and Cheshunt after 22:45" },
+  { line: "windrush", startDate: "2026-08-29", endDate: "2026-08-31", desc: "Windrush Line: Surrey Quays to Clapham Junction" }
+];
+
+function getUpcomingWorkNotice(lineId) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const nextWeek = new Date(today);
+  nextWeek.setDate(today.getDate() + 7);
+
+  return PLANNED_SCHEDULE.find(item => {
+    if (item.line !== lineId) return false;
+    const start = new Date(item.startDate);
+    const end = new Date(item.endDate);
+    end.setHours(23, 59, 59, 999);
+
+    return today <= end && start <= nextWeek;
+  });
+}
+
+const darkModeToggle = document.getElementById("dark-mode-toggle");
+if (localStorage.getItem("tfl_dark_mode") === "true") {
+  document.body.classList.add("dark-mode");
+  darkModeToggle.checked = true;
+}
+darkModeToggle.addEventListener("change", (e) => {
+  if (e.target.checked) {
+    document.body.classList.add("dark-mode");
+    localStorage.setItem("tfl_dark_mode", "true");
+  } else {
+    document.body.classList.remove("dark-mode");
+    localStorage.setItem("tfl_dark_mode", "false");
+  }
+});
+
+const LINE_COLORS = {
+  "bakerloo": { var: "var(--color-bakerloo)", text: "#fff", hex: "#B16300", name: "Bakerloo" },
+  "central": { var: "var(--color-central)", text: "#fff", hex: "#E32017", name: "Central" },
+  "circle": { var: "var(--color-circle)", text: "#111", hex: "#FFD300", name: "Circle" },
+  "district": { var: "var(--color-district)", text: "#fff", hex: "#00782A", name: "District" },
+  "hammersmith-city": { var: "var(--color-hammersmith-city)", text: "#111", hex: "#F589A6", name: "Hammersmith & City" },
+  "jubilee": { var: "var(--color-jubilee)", text: "#fff", hex: "#A0A5A9", name: "Jubilee" },
+  "metropolitan": { var: "var(--color-metropolitan)", text: "#fff", hex: "#9B0056", name: "Metropolitan" },
+  "northern": { var: "var(--color-northern)", text: "#fff", hex: "#000000", name: "Northern" },
+  "piccadilly": { var: "var(--color-piccadilly)", text: "#fff", hex: "#0019A8", name: "Piccadilly" },
+  "victoria": { var: "var(--color-victoria)", text: "#fff", hex: "#0098D4", name: "Victoria" },
+  "waterloo-city": { var: "var(--color-waterloo-city)", text: "#111", hex: "#95CDBA", name: "Waterloo & City" },
+  "dlr": { var: "var(--color-dlr)", text: "#fff", hex: "#00A4A6", name: "DLR" },
+  "elizabeth": { var: "var(--color-elizabeth)", text: "#fff", hex: "#6950A1", name: "Elizabeth Line" },
+  "mildmay": { var: "var(--color-mildmay)", text: "#fff", hex: "#2774ae", name: "Mildmay Line" },
+  "windrush": { var: "var(--color-windrush)", text: "#fff", hex: "#d22730", name: "Windrush Line" },
+  "weaver": { var: "var(--color-weaver)", text: "#fff", hex: "#893b67", name: "Weaver Line" },
+  "suffragette": { var: "var(--color-suffragette)", text: "#fff", hex: "#5ba763", name: "Suffragette Line" },
+  "lioness": { var: "var(--color-lioness)", text: "#111", hex: "#ef9600", name: "Lioness Line" },
+  "liberty": { var: "var(--color-liberty)", text: "#fff", hex: "#606667", name: "Liberty Line" },
+  "tram": { var: "var(--color-tram)", text: "#111", hex: "#84B817", name: "London Trams" },
+  "national-rail": { var: "var(--color-national-rail)", text: "#fff", hex: "#d2172a", name: "National Rail" }
+};
+
+// COMPREHENSIVE INTERCHANGE DIRECTORY
+const INTERCHANGE_DIRECTORY = {
+  "Ealing Broadway": ["central", "district", "elizabeth", "national-rail"],
+  "Ealing Common": ["district", "piccadilly"],
+  "Acton Town": ["district", "piccadilly"],
+  "Chiswick Park": ["district"],
+  "Turnham Green": ["district", "piccadilly"],
+  "Stamford Brook": ["district"],
+  "Ravenscourt Park": ["district"],
+  "Hammersmith": ["circle", "district", "hammersmith-city", "piccadilly"],
+  "Barons Court": ["district", "piccadilly"],
+  "West Kensington": ["district"],
+  "Earl's Court": ["district", "piccadilly"],
+  "Kensington (Olympia)": ["district", "mildmay", "national-rail"],
+  "West Brompton": ["district", "mildmay", "national-rail"],
+  "Fulham Broadway": ["district"],
+  "Parsons Green": ["district"],
+  "Putney Bridge": ["district"],
+  "East Putney": ["district"],
+  "Southfields": ["district"],
+  "Wimbledon Park": ["district"],
+  "Wimbledon": ["district", "tram", "national-rail"],
+  "Gunnersbury": ["district", "mildmay"],
+  "Kew Gardens": ["district", "mildmay"],
+  "Richmond": ["district", "mildmay", "national-rail"],
+  "High Street Kensington": ["circle", "district"],
+  "Notting Hill Gate": ["central", "circle", "district"],
+  "Bayswater": ["circle", "district"],
+  "Paddington": ["bakerloo", "circle", "district", "hammersmith-city", "elizabeth", "national-rail"],
+  "Edgware Road": ["circle", "district", "hammersmith-city"],
+  "Gloucester Road": ["circle", "district", "piccadilly"],
+  "South Kensington": ["circle", "district", "piccadilly"],
+  "Sloane Square": ["circle", "district"],
+  "Victoria": ["circle", "district", "victoria", "national-rail"],
+  "St James's Park": ["circle", "district"],
+  "Westminster": ["circle", "district", "jubilee"],
+  "Embankment": ["bakerloo", "circle", "district", "northern"],
+  "Temple": ["circle", "district"],
+  "Blackfriars": ["circle", "district", "national-rail"],
+  "Mansion House": ["circle", "district"],
+  "Cannon Street": ["circle", "district", "national-rail"],
+  "Monument": ["central", "circle", "district", "northern", "waterloo-city", "dlr"],
+  "Tower Hill": ["circle", "district", "dlr"],
+  "Aldgate East": ["district", "hammersmith-city"],
+  "Whitechapel": ["district", "hammersmith-city", "elizabeth", "windrush"],
+  "Stepney Green": ["district", "hammersmith-city"],
+  "Mile End": ["central", "district", "hammersmith-city"],
+  "Bow Road": ["district", "hammersmith-city", "dlr"],
+  "Bromley-by-Bow": ["district", "hammersmith-city"],
+  "West Ham": ["district", "hammersmith-city", "jubilee", "dlr", "national-rail"],
+  "Plaistow": ["district", "hammersmith-city"],
+  "Upton Park": ["district", "hammersmith-city"],
+  "East Ham": ["district", "hammersmith-city"],
+  "Barking": ["district", "hammersmith-city", "suffragette", "national-rail"],
+  "Upney": ["district"],
+  "Becontree": ["district"],
+  "Dagenham Heathway": ["district"],
+  "Dagenham East": ["district"],
+  "Elm Park": ["district"],
+  "Hornchurch": ["district"],
+  "Upminster Bridge": ["district"],
+  "Upminster": ["district", "liberty", "national-rail"],
+  "Shepherd's Bush": ["central", "mildmay", "national-rail"],
+  "Reading": ["national-rail"],
+  "Twyford": ["national-rail"],
+  "Maidenhead": ["national-rail"],
+  "Slough": ["national-rail"],
+  "Hayes & Harlington": ["national-rail"],
+  "Bond Street": ["central", "jubilee", "elizabeth"],
+  "Tottenham Court Road": ["central", "northern", "elizabeth"],
+  "Farringdon": ["circle", "hammersmith-city", "metropolitan", "elizabeth", "national-rail"],
+  "Liverpool Street": ["central", "circle", "hammersmith-city", "metropolitan", "elizabeth", "weaver", "national-rail"],
+  "Stratford": ["central", "jubilee", "elizabeth", "mildmay", "dlr", "national-rail"],
+  "Romford": ["elizabeth", "liberty", "national-rail"],
+  "Shenfield": ["elizabeth", "national-rail"],
+  "Canary Wharf": ["jubilee", "elizabeth", "dlr"],
+  "Custom House": ["elizabeth", "dlr"],
+  "Woolwich": ["elizabeth", "national-rail"],
+  "Oxford Circus": ["bakerloo", "central", "victoria"],
+  "King's Cross St Pancras": ["circle", "hammersmith-city", "metropolitan", "northern", "piccadilly", "victoria", "national-rail"],
+  "Baker Street": ["bakerloo", "circle", "hammersmith-city", "jubilee", "metropolitan"],
+  "Waterloo": ["bakerloo", "jubilee", "northern", "waterloo-city", "national-rail"],
+  "Bank": ["central", "northern", "waterloo-city", "dlr"],
+  "Euston": ["northern", "victoria", "lioness", "national-rail"],
+  "London Bridge": ["jubilee", "northern", "national-rail"],
+  "Holborn": ["central", "piccadilly"],
+  "Finsbury Park": ["piccadilly", "victoria", "national-rail"],
+  "Canning Town": ["jubilee", "dlr"],
+  "Clapham Junction": ["mildmay", "windrush", "national-rail"],
+  "Willesden Junction": ["bakerloo", "mildmay", "lioness"],
+  "Seven Sisters": ["victoria", "weaver", "national-rail"],
+  "Warren Street": ["northern", "victoria"],
+  "Leicester Square": ["northern", "piccadilly"],
+  "Charing Cross": ["bakerloo", "northern", "national-rail"],
+  "Elephant & Castle": ["bakerloo", "northern", "national-rail"],
+  "Moorgate": ["circle", "hammersmith-city", "metropolitan", "northern", "national-rail"],
+  "East Croydon": ["tram", "national-rail"]
+};
+
+// FULL TREE STRUCTURES WITH ACCURATE MULTI-BRANCH MAPS
+const LINE_TREES = {
+  "district": {
+    junctions: [
+      {
+        name: "Turnham Green",
+        splits: [
+          ["Gunnersbury", "Kew Gardens", "Richmond"],
+          ["Chiswick Park", "Acton Town", "Ealing Common", "Ealing Broadway"]
+        ]
+      },
+      {
+        name: "Earl's Court",
+        splits: [
+          ["Kensington (Olympia)"],
+          ["West Brompton", "Fulham Broadway", "Parsons Green", "Putney Bridge", "East Putney", "Southfields", "Wimbledon Park", "Wimbledon"],
+          ["High Street Kensington", "Notting Hill Gate", "Bayswater", "Paddington", "Edgware Road"]
+        ]
+      }
+    ],
+    trunk: [
+      "Upminster", "Upminster Bridge", "Hornchurch", "Elm Park", "Dagenham East", "Dagenham Heathway", "Becontree", "Upney", "Barking", "East Ham", "Upton Park", "Plaistow", "West Ham", "Bromley-by-Bow", "Bow Road", "Mile End", "Stepney Green", "Whitechapel", "Aldgate East", "Tower Hill", "Monument", "Cannon Street", "Mansion House", "Blackfriars", "Temple", "Embankment", "Westminster", "St James's Park", "Victoria", "Sloane Square", "South Kensington", "Gloucester Road", "Earl's Court", "West Kensington", "Barons Court", "Hammersmith", "Ravenscourt Park", "Stamford Brook", "Turnham Green"
+    ]
+  },
+  "elizabeth": {
+    junctions: [
+      { 
+        name: "Hayes & Harlington", 
+        splits: [
+          ["Heathrow Terminals 2 & 3", "Heathrow Terminal 4", "Heathrow Terminal 5"],
+          ["Southall", "Hanwell", "West Ealing", "Ealing Broadway", "Acton Main Line", "Paddington", "Bond Street", "Tottenham Court Road", "Farringdon", "Liverpool Street", "Whitechapel"]
+        ] 
+      },
+      { 
+        name: "Whitechapel", 
+        splits: [
+          ["Stratford", "Maryland", "Forest Gate", "Manor Park", "Ilford", "Seven Kings", "Goodmayes", "Chadwell Heath", "Romford", "Gidea Park", "Harold Wood", "Brentwood", "Shenfield"],
+          ["Canary Wharf", "Custom House", "Woolwich", "Abbey Wood"]
+        ] 
+      }
+    ],
+    trunk: ["Reading", "Twyford", "Maidenhead", "Taplow", "Burnham", "Slough", "Langley", "Iver", "West Drayton"]
+  },
+  "central": {
+    junctions: [
+      { name: "North Acton", splits: [["West Ruislip", "Ruislip Gardens", "South Ruislip", "Northolt", "Greenford", "Perivale", "Hanger Lane"], ["Ealing Broadway", "West Acton"]] },
+      { name: "Leytonstone", splits: [["Snaresbrook", "South Woodford", "Woodford", "Buckhurst Hill", "Loughton", "Debden", "Theydon Bois", "Epping"], ["Wanstead", "Redbridge", "Gants Hill", "Newbury Park", "Barkingside", "Fairlop", "Hainault", "Grange Hill", "Chigwell", "Roding Valley"]] }
+    ],
+    trunk: ["White City", "Shepherd's Bush", "Holland Park", "Notting Hill Gate", "Queensway", "Lancaster Gate", "Marble Arch", "Bond Street", "Oxford Circus", "Tottenham Court Road", "Holborn", "Chancery Lane", "St Paul's", "Bank", "Liverpool Street", "Bethnal Green", "Mile End", "Stratford", "Leyton"]
+  },
+  "northern": {
+    junctions: [
+      { name: "Camden Town", splits: [["Chalk Farm", "Belsize Park", "Hampstead", "Golders Green", "Brent Cross", "Hendon Central", "Colindale", "Burnt Oak", "Edgware"], ["Kentish Town", "Tufnell Park", "Archway", "Highgate", "East Finchley", "Finchley Central", "West Finchley", "Woodside Park", "Totteridge & Whetstone", "High Barnet"]] },
+      { name: "Kennington", splits: [["Nine Elms", "Battersea Power Station"], ["Oval", "Stockwell", "Clapham North", "Clapham Common", "Clapham South", "Balham", "Tooting Bec", "Tooting Broadway", "Colliers Wood", "South Wimbledon", "Morden"]] }
+    ],
+    trunk: ["Euston", "King's Cross St Pancras", "Angel", "Old Street", "Moorgate", "Bank", "London Bridge", "Borough", "Elephant & Castle"]
+  },
+  "piccadilly": {
+    junctions: [
+      { name: "Acton Town", splits: [["Ealing Common", "North Ealing", "Park Royal", "Alperton", "Sudbury Town", "Sudbury Hill", "South Harrow", "Rayners Lane", "Eastcote", "Ruislip Manor", "Ruislip", "Ickenham", "Hillingdon", "Uxbridge"], ["South Ealing", "NorthIt looks like you might be missing the specific lines, disrupted segments, or dataset you'd like formatted. 
+
+Could you please share the specific line status alerts (e.g., *"Central line: Line Closed from X to Y"*) or the text/data structure you need amended? Once provided, every station along those routes and branches will be mapped out with continuous branch paths and station-by-station status tags.
