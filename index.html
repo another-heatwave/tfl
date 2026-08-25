@@ -16,7 +16,6 @@
       --input-bg: #ffffff;
       --toolbar-bg: #eaeaea;
       
-      /* TfL Official Line Colors */
       --color-bakerloo: #B16300;
       --color-central: #E32017;
       --color-circle: #FFD300;
@@ -33,7 +32,6 @@
       --color-tram: #84B817;
       --color-national-rail: #d2172a;
       
-      /* Overground Named Line Colors */
       --color-mildmay: #2774ae;
       --color-windrush: #d22730;
       --color-weaver: #893b67;
@@ -42,7 +40,6 @@
       --color-liberty: #606667;
       --color-default: #EE7C0E;
 
-      /* Status Palette */
       --status-closed: #c62828;
       --status-severe: #e65100;
       --status-minor: #d97706;
@@ -67,7 +64,6 @@
       transition: background 0.2s ease, color 0.2s ease;
       font-size: 15px; line-height: 1.5;
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
     }
     header {
       background: #111; color: white;
@@ -318,7 +314,6 @@ let selectedLineDetailId = null;
 let lastUpdatedTime = null;
 let cachedLiveMapData = [];
 
-// SCHEDULE DATA
 const PLANNED_SCHEDULE = [
   { line: "district", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Turnham Green to Richmond" },
   { line: "dlr", startDate: "2026-08-16", endDate: "2026-08-16", desc: "Tower Gateway to Shadwell" },
@@ -507,7 +502,7 @@ const INTERCHANGE_DIRECTORY = {
   "Heathrow Terminal 5": ["piccadilly", "elizabeth"]
 };
 
-// FULL TREE STRUCTURES WITH INTEGRATED JUNCTION NODES
+// FULL TREE STRUCTURES WITH PICCADILLY HEATHROW LOOP & DISTRICT CONTINUOUS FLOW
 const LINE_TREES = {
   "piccadilly": {
     junctions: [
@@ -515,20 +510,19 @@ const LINE_TREES = {
         name: "Acton Town",
         splits: [
           ["Ealing Common", "North Ealing", "Park Royal", "Alperton", "Sudbury Town", "Sudbury Hill", "South Harrow", "Rayners Lane", "Eastcote", "Ruislip Manor", "Ruislip", "Ickenham", "Hillingdon", "Uxbridge"],
-          ["South Ealing", "Northfields", "Boston Manor", "Osterley", "Hounslow EastWithout knowing which specific app, website, or device you are using, "loading status" usually means the application is waiting for a response from a server or a background process that has timed out or crashed. 
+          ["South Ealing", "Northfields", "Boston Manor", "Osterley", "HDeleting or clearing update notes after completing a file is typically done to keep the codebase, documentation, or workspace clean and maintainable. 
 
-Common causes and immediate fixes include:
+**Core Reasons for Clearing Update Notes**
 
-* **Stale Session or App Freeze:** The interface's UI hasn't updated even if the background service failed.
-  * *Fix:* Force-close the app or perform a hard refresh in your browser (**Ctrl + F5** on Windows or **Cmd + Shift + R** on Mac).
-* **Network Interruption or VPN Conflict:** Your internet connection dropped briefly, or a VPN/ad-blocker is preventing the app from checking the status.
-  * *Fix:* Temporarily disable your VPN/ad-blocker or switch network connections.
-* **Server-Side Outage:** The service provider's servers are down or overloaded, so the app is stuck sending requests into a void.
-  * *Fix:* Check the service's official status page or Downdetector.
-* **Corrupted Cache:** Cached temporary files are preventing fresh data from loading.
-  * *Fix:* Clear your browser cookies/cache or clear the app's cache in your device settings.
+* **Noise Reduction:** Once changes are committed or merged, keeping temporary execution notes inside working files creates visual clutter for anyone reading the code later.
+* **Single Source of Truth:** System-level updates belong in dedicated changelogs (like a `CHANGELOG.md`), commit histories, or issue trackers—not scattered inside source code files.
+* **Preventing Stale Context:** Temporary instructions or step-by-step update notes can quickly become outdated, leading to confusion if future developers mistake them for active guidelines.
+* **Clean Production Builds:** Retaining temporary scratchpads or inline task lists in production files increases unnecessary payload size and reduces code readability.
 
-***
+**Where Changes Should Be Documented Instead**
 
-**What specific software, app, or website are you using, and what action were you trying to perform when it got stuck?**
-           
+* **Version Control:** Git commit messages capture the exact delta, author, and timestamp.
+* **Project Logs:** Dedicated `CHANGELOG.md` files maintain high-level feature notes for users and developers.
+* **Pull Requests:** PR descriptions house the discussion, context, and detailed checklist behind the update.
+
+If you prefer to preserve specific notes, progress logs, or inline documentation for your task, let me know how you'd like them formatted or saved (e.g., in a separate log file or embedded directly as permanent comments).
