@@ -507,7 +507,7 @@ const INTERCHANGE_DIRECTORY = {
   "Heathrow Terminal 5": ["piccadilly", "elizabeth"]
 };
 
-// FULL TREE STRUCTURES WITH PICCADILLY HEATHROW LOOP & DISTRICT CONTINUOUS FLOW
+// FULL TREE STRUCTURES WITH INTEGRATED JUNCTION NODES
 const LINE_TREES = {
   "piccadilly": {
     junctions: [
@@ -515,21 +515,20 @@ const LINE_TREES = {
         name: "Acton Town",
         splits: [
           ["Ealing Common", "North Ealing", "Park Royal", "Alperton", "Sudbury Town", "Sudbury Hill", "South Harrow", "Rayners Lane", "Eastcote", "Ruislip Manor", "Ruislip", "Ickenham", "Hillingdon", "Uxbridge"],
-          ["South Ealing", "Northfields", "Boston Manor", "OWhen a webpage fails to load or appears broken, the issue usually falls into one of three categories: your local connection, the browser, or the server hosting the site.
+          ["South Ealing", "Northfields", "Boston Manor", "Osterley", "Hounslow EastWithout knowing which specific app, website, or device you are using, "loading status" usually means the application is waiting for a response from a server or a background process that has timed out or crashed. 
 
-**Common Causes & Fixes**
+Common causes and immediate fixes include:
 
-* **Server Outage (Site Down):** The website's hosting server may be offline, undergoing maintenance, or experiencing a Distributed Denial of Service (DDoS) attack.
-  * *Fix:* Check sites like *DownDetector* or *IsItDownRightNow* to see if the issue is widespread.
-* **Corrupted Browser Cache or Cookies:** Stored data in your browser can become corrupted or outdated, causing rendering errors or infinite loading loops.
-  * *Fix:* Clear your browser's cache and cookies, or try opening the link in an **Incognito/Private window**.
-* **Browser Extensions:** Ad blockers, privacy tools, or script blockers often interfere with page elements, preventing scripts or stylesheets from executing properly.
-  * *Fix:* Temporarily disable your extensions (especially ad blockers) and refresh.
-* **Network & DNS Issues:** Your local network connection might be unstable, or your ISP's DNS server might fail to resolve the website's domain name correctly.
-  * *Fix:* Restart your router, or switch your DNS settings to a public service (like Google DNS `8.8.8.8` or Cloudflare `1.1.1.1`).
-* **Broken Code or Assets (Web Developer Issue):** The site may have syntax errors in its JavaScript, broken file pathways for CSS stylesheets, or a misconfigured SSL certificate (showing a security warning).
+* **Stale Session or App Freeze:** The interface's UI hasn't updated even if the background service failed.
+  * *Fix:* Force-close the app or perform a hard refresh in your browser (**Ctrl + F5** on Windows or **Cmd + Shift + R** on Mac).
+* **Network Interruption or VPN Conflict:** Your internet connection dropped briefly, or a VPN/ad-blocker is preventing the app from checking the status.
+  * *Fix:* Temporarily disable your VPN/ad-blocker or switch network connections.
+* **Server-Side Outage:** The service provider's servers are down or overloaded, so the app is stuck sending requests into a void.
+  * *Fix:* Check the service's official status page or Downdetector.
+* **Corrupted Cache:** Cached temporary files are preventing fresh data from loading.
+  * *Fix:* Clear your browser cookies/cache or clear the app's cache in your device settings.
 
-<ElicitationsGroup message="To help diagnose the exact cause, let me know:">
-  <Elicitation label="Troubleshoot a specific error code" query="I am seeing a specific HTTP error code (like 404, 500, or 502). How do I fix it?" />
-  <Elicitation label="Check if it is broken just for me" query="How can I test whether a broken website is down for everyone or just me?" />
-</ElicitationsGroup>
+***
+
+**What specific software, app, or website are you using, and what action were you trying to perform when it got stuck?**
+           
