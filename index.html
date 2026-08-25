@@ -67,7 +67,6 @@
       transition: background 0.2s ease, color 0.2s ease;
       font-size: 15px; line-height: 1.5;
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
     }
     header {
       background: #111; color: white;
@@ -507,7 +506,7 @@ const INTERCHANGE_DIRECTORY = {
   "Heathrow Terminal 5": ["piccadilly", "elizabeth"]
 };
 
-// FULL TREE STRUCTURES WITH INTEGRATED JUNCTION NODES
+// FULL TREE STRUCTURES INCLUDING COMPLETE PICCADILLY HEATHROW LOOP & DISTRICT LINES
 const LINE_TREES = {
   "piccadilly": {
     junctions: [
@@ -515,19 +514,17 @@ const LINE_TREES = {
         name: "Acton Town",
         splits: [
           ["Ealing Common", "North Ealing", "Park Royal", "Alperton", "Sudbury Town", "Sudbury Hill", "South Harrow", "Rayners Lane", "Eastcote", "Ruislip Manor", "Ruislip", "Ickenham", "Hillingdon", "Uxbridge"],
-          ["South Ealing", "Northfields", "Boston Manor", "Osterley", "Hounslow EastWithout knowing which specific app, website, or device you are using, "loading status" usually means the application is waiting for a response from a server or a background process that has timed out or crashed. 
+          ["South Ealing", "Northfields", "Boston Manor", "Osterley", "Hounslow East", "Hounslow Central", "HounslowLet's fix it. To help me pinpoint the exact issue, **what are you seeing right now?**
 
-Common causes and immediate fixes include:
+* **Blank white screen / spin cycle** (often a JavaScript error or missing script)
+* **Error code** (e.g., `404 Not Found`, `500 Server Error`, CORS policy error)
+* **Broken layout / missing styles** (CSS fail or missing assets)
+* **Code throwing an exception in the console** (Inspect element → Console)
 
-* **Stale Session or App Freeze:** The interface's UI hasn't updated even if the background service failed.
-  * *Fix:* Force-close the app or perform a hard refresh in your browser (**Ctrl + F5** on Windows or **Cmd + Shift + R** on Mac).
-* **Network Interruption or VPN Conflict:** Your internet connection dropped briefly, or a VPN/ad-blocker is preventing the app from checking the status.
-  * *Fix:* Temporarily disable your VPN/ad-blocker or switch network connections.
-* **Server-Side Outage:** The service provider's servers are down or overloaded, so the app is stuck sending requests into a void.
-  * *Fix:* Check the service's official status page or Downdetector.
-* **Corrupted Cache:** Cached temporary files are preventing fresh data from loading.
-  * *Fix:* Clear your browser cookies/cache or clear the app's cache in your device settings.
+If you can **paste the code snippet** or **copy the error message from the browser console**, I can give you the exact fix right away. 
 
-***
+Otherwise, run down this quick 3-step triage:
 
-**What specific software, app, or website are you using, and what action were you trying to perform when it got stuck?**
+1. **Open the Developer Console:** Press `F12` (or `Cmd + Option + I` on Mac) and click the **Console** tab. Look for red error text.
+2. **Check the Network tab:** Refresh the page with the console open to see if any assets/files are failing to load (red `404` or `500` status).
+3. **Hard refresh:** Clear the browser cache using `Ctrl + F5` (or `Cmd + Shift + R`).
