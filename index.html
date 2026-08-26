@@ -67,7 +67,6 @@
       transition: background 0.2s ease, color 0.2s ease;
       font-size: 15px; line-height: 1.5;
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
     }
     header {
       background: #111; color: white;
@@ -506,26 +505,8 @@ const INTERCHANGE_DIRECTORY = {
   "Heathrow Terminal 5": ["piccadilly", "elizabeth"]
 };
 
-// FULL TREE STRUCTURES WITH PICCADILLY HEATHROW LOOP & DISTRICT CONTINUOUS FLOW
+// DIRECT GRAPH ROUTING (NO DUPLICATE JUNCTION NODES & SUPPORT FOR HAINAULT LOOP)
 const LINE_TREES = {
-  "piccadilly": {
-    trunk: [
-      "Cockfosters", "Oakwood", "Southgate", "Arnos Grove", "Bounds Green", "Wood Green", 
-      "Turnpike Lane", "Manor House", "Finsbury Park", "Arsenal", "Holloway Road", "Caledonian Road", 
-      "King's Cross St Pancras", "Russell Square", "Holborn", "Covent Garden", "Leicester Square", 
-      "Piccadilly Circus", "Green Park", "Hyde Park Corner", "Knightsbridge", "South Kensington", 
-      "Gloucester Road", "Earl's Court", "Barons Court", "Hammersmith", "Turnham Green", "Acton Town"
-    ],
-    junctions: [
-      {
-        name: "Acton Town",
-        splits: [
-          ["Ealing Common", "North Ealing", "Park Royal", "Alperton", "Sudbury Town", "Sudbury Hill", "South Harrow", "Rayners Lane", "Eastcote", "Ruislip Manor", "Ruislip", "Ickenham", "Hillingdon", "Uxbridge"],
-          ["South Ealing", "Northfields", "Boston Manor", "Osterley", "Hounslow East", "Hounslow Central", "Hounslow West", "Hatton Cross", "Heathrow Terminal 4", "Heathrow Terminals 2 & 3", "Heathrow Terminal 5"]
-        ]
-      }
-    ]
-  },
   "district": {
     trunk: [
       "Upminster", "Upminster Bridge", "Hornchurch", "Elm Park", "Dagenham East", "Dagenham Heathway", 
@@ -536,49 +517,60 @@ const LINE_TREES = {
       "Gloucester Road", "Earl's Court", "West Kensington", "Barons Court", "Hammersmith", 
       "Ravenscourt Park", "Stamford Brook", "Turnham Green"
     ],
-    junctions: [
-      {
-        name: "Earl's Court",
-        splits: [
-          ["Kensington (Olympia)"],
-          ["West Brompton", "Fulham Broadway", "Parsons Green", "Putney Bridge", "East Putney", "Southfields", "Wimbledon Park", "Wimbledon"],
-          ["High Street Kensington", "Notting Hill Gate", "Bayswater", "Paddington", "Edgware Road"]
-        ]
-      },
-      {
-        name: "Turnham Green",
-        splits: [
-          ["Gunnersbury", "Kew Gardens", "Richmond"],
-          ["Chiswick Park", "Acton Town", "Ealing Common", "Ealing Broadway"]
-        ]
-      }
-    ]
+    branchesFromNode: {
+      "Earl's Court": [
+        ["Kensington (Olympia)"],
+        ["West Brompton", "Fulham Broadway", "Parsons Green", "Putney Bridge", "East Putney", "Southfields", "Wimbledon Park", "Wimbledon"],
+        ["High Street Kensington", "Notting Hill Gate", "Bayswater", "Paddington", "Edgware Road"]
+      ],
+      "Turnham Green": [
+        ["Gunnersbury", "Kew Gardens", "Richmond"],
+        ["Chiswick Park", "Acton Town", "Ealing Common", "Ealing Broadway"]
+      ]
+    }
+  },
+  "central": {
+    trunk: [
+      "West Ruislip", "Ruislip Gardens", "South Ruislip", "Northolt", "Greenford", "Perivale", "Hanger Lane",
+      "North Acton", "West Acton", "Ealing Broadway", "White City", "Shepherd's Bush", "Holland Park", 
+      "Notting Hill Gate", "Queensway", "Lancaster Gate", "Marble Arch", "Bond Street", "Oxford Circus", 
+      "Tottenham Court Road", "Holborn", "Chancery Lane", "St Paul's", "Bank", "Liverpool Street", 
+      "Bethnal Green", "Mile End", "Stratford", "Leyton", "Leytonstone", "Snaresbrook", "South Woodford", 
+      "Woodford", "Buckhurst Hill", "Loughton", "Debden", "Theydon Bois", "Epping"
+    ],
+    branchesFromNode: {
+      "Leytonstone": [
+        ["Wanstead", "Redbridge", "Gants Hill", "Newbury Park", "Barkingside", "Fairlop", "Hainault", "Grange Hill", "Chigwell", "Roding Valley", "Woodford"]
+      ]
+    }
+  },
+  "piccadilly": {
+    trunk: [
+      "Cockfosters", "Oakwood", "Southgate", "Arnos Grove", "Bounds Green", "Wood Green", 
+      "Turnpike Lane", "Manor House", "Finsbury Park", "Arsenal", "Holloway Road", "Caledonian Road", 
+      "King's Cross St Pancras", "Russell Square", "Holborn", "Covent Garden", "Leicester Square", 
+      "Piccadilly Circus", "Green Park", "Hyde Park Corner", "Knightsbridge", "South Kensington", 
+      "Gloucester Road", "Earl's Court", "Barons Court", "Hammersmith", "Turnham Green", "Acton Town"
+    ],
+    branchesFromNode: {
+      "Acton Town": [
+        ["Ealing Common", "North Ealing", "Park Royal", "Alperton", "Sudbury Town", "Sudbury Hill", "South Harrow", "Rayners Lane", "Eastcote", "Ruislip Manor", "Ruislip", "Ickenham", "Hillingdon", "Uxbridge"],
+        ["South Ealing", "Northfields", "Boston Manor", "Osterley", "Hounslow East", "Hounslow Central", "Hounslow West", "Hatton Cross", "Heathrow Terminal 4", "Heathrow Terminals 2 & 3", "Heathrow Terminal 5"]
+      ]
+    }
   },
   "elizabeth": {
     trunk: ["Reading", "Twyford", "Maidenhead", "Taplow", "Burnham", "Slough", "Langley", "Iver", "West Drayton"],
-    junctions: [
-      { 
-        name: "Hayes & Harlington", 
-        splits: [
-          ["Heathrow Terminals 2 & 3", "Heathrow Terminal 4", "Heathrow Terminal 5"],
-          ["Southall", "Hanwell", "West Ealing", "Ealing Broadway", "Acton Main Line", "Paddington", "Bond Street", "Tottenham Court Road", "Farringdon", "Liverpool Street", "Whitechapel"]
-        ] 
-      },
-      { 
-        name: "Whitechapel", 
-        splits: [
-          ["Stratford", "Maryland", "Forest Gate", "Manor Park", "Ilford", "Seven Kings", "Goodmayes", "Chadwell Heath", "Romford", "Gidea Park", "Harold Wood", "Brentwood", "Shenfield"],
-          ["Canary Wharf", "Custom House", "Woolwich", "Abbey Wood"]
-        ] 
-      }
-    ]
-  },
-  "central": {
-    trunk: ["White City", "Shepherd's Bush", "Holland Park", "Notting Hill Gate", "Queensway", "Lancaster Gate", "Marble Arch", "Bond Street", "Oxford Circus", "Tottenham Court Road", "Holborn", "Chancery Lane", "St Paul's", "Bank", "Liverpool Street", "Bethnal Green", "Mile End", "Stratford", "Leyton"],
-    junctions: [
-      { name: "North Acton", splits: [["West Ruislip", "Ruislip Gardens", "South Ruislip", "Northolt", "Greenford", "Perivale", "Hanger Lane"], ["Ealing Broadway", "West Acton"]] },
-      { name: "Leytonstone", splits: [["Snaresbrook", "South Woodford", "Woodford", "Buckhurst Hill", "Loughton", "Debden", "Theydon Bois", "Epping"], ["Wanstead", "Redbridge", "Gants Hill", "Newbury Park", "Barkingside", "Fairlop", "Hainault", "Grange Hill", "Chigwell", "Roding Valley"]] }
-    ]
+    branchesFromNode: {
+      "Hayes & Harlington": [
+        ["Heathrow Terminals 2 & 3", "Heathrow Terminal 4", "Heathrow Terminal 5"],
+        ["Southall", "Hanwell", "West Ealing", "Ealing Broadway", "Acton Main Line", "Paddington", "Bond Street", "Tottenham Court Road", "Farringdon", "Liverpool Street", "Whitechapel"]
+      ],
+      "Whitechapel": [
+        ["Stratford", "Maryland", "Forest Gate", "Manor Park", "Ilford", "Seven Kings", "Goodmayes", "Chadwell Heath", "Romford", "Gidea Park", "Harold Wood", "Brentwood", "Shenfield"],
+        ["Canary Wharf", "Custom House", "Woolwich", "Abbey Wood"]
+      ]
+    }
   }
 };
 
@@ -610,10 +602,11 @@ function evaluateStationStatuses(lineId, lineStatuses) {
   if (LINE_TREES[lineId]) {
     const tree = LINE_TREES[lineId];
     allStations = [...tree.trunk];
-    tree.junctions.forEach(j => {
-      allStations.push(j.name);
-      j.splits.forEach(b => allStations.push(...b));
-    });
+    if (tree.branchesFromNode) {
+      Object.values(tree.branchesFromNode).forEach(branches => {
+        branches.forEach(b => allStations.push(...b));
+      });
+    }
   } else {
     allStations = LINE_ROUTES[lineId] || [];
   }
@@ -691,6 +684,7 @@ function getInterchangeBadgesHtml(currentLineId, stationName) {
   return `<div class="ic-badge-container">${badges}</div>`;
 }
 
+// CONTINUOUS FLOW DIRECTED SVG GRAPH RENDERER
 function renderSVGTreeDiagram(lineId, stationStatuses) {
   const lineConf = LINE_COLORS[lineId] || { hex: "#EE7C0E" };
   const baseColor = lineConf.hex;
@@ -711,14 +705,12 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
     const svgHeight = route.length * rowHeight + 30;
 
     let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 780 ${svgHeight}" preserveAspectRatio="xMinYMin meet">`;
-
     svgHtml += `<line x1="22" y1="14" x2="22" y2="${(route.length - 1) * rowHeight + 14}" stroke="${baseColor}" stroke-width="4.5" opacity="0.45" />`;
 
     route.forEach((st, i) => {
       const y = i * rowHeight + 14;
       const status = stationStatuses.get(st);
       const style = getStatusStyle(status);
-
       const icBadges = getInterchangeBadgesHtml(lineId, st);
       const isInterchange = Boolean(icBadges);
 
@@ -742,29 +734,31 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
   const tree = LINE_TREES[lineId];
   const rowHeight = 30;
   
-  let totalRowsCalculated = tree.trunk.length;
-  tree.junctions.forEach(j => {
-    let longestSplit = 0;
-    j.splits.forEach(b => {
-      if (b.length > longestSplit) longestSplit = b.length;
+  let totalRows = tree.trunk.length;
+  if (tree.branchesFromNode) {
+    Object.values(tree.branchesFromNode).forEach(branches => {
+      let longest = 0;
+      branches.forEach(b => { if (b.length > longest) longest = b.length; });
+      totalRows += longest + 1;
     });
-    totalRowsCalculated += 2 + longestSplit;
-  });
+  }
 
-  const svgHeight = (totalRowsCalculated * rowHeight) + 120;
+  const svgHeight = (totalRows * rowHeight) + 120;
   let currY = 14;
+  let nodeYMap = new Map();
 
   let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 780 ${svgHeight}" preserveAspectRatio="xMinYMin meet">`;
 
   tree.trunk.forEach((st, i) => {
     const y = currY;
+    nodeYMap.set(st, y);
+
     if (i < tree.trunk.length - 1) {
       svgHtml += `<line x1="32" y1="${y}" x2="32" y2="${y + rowHeight}" stroke="${baseColor}" stroke-width="4.5" opacity="0.45" />`;
     }
 
     const status = stationStatuses.get(st);
     const style = getStatusStyle(status);
-
     const icBadges = getInterchangeBadgesHtml(lineId, st);
     const isInterchange = Boolean(icBadges);
 
@@ -779,61 +773,62 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
     if (icBadges) {
       svgHtml += `<foreignObject x="280" y="${y - 11}" width="480" height="22">${icBadges}</foreignObject>`;
     }
+    
     currY += rowHeight;
-  });
 
-  tree.junctions.forEach((j) => {
-    const jY = currY;
-    const status = stationStatuses.get(j.name);
-    const style = getStatusStyle(status);
+    if (tree.branchesFromNode && tree.branchesFromNode[st]) {
+      const branches = tree.branchesFromNode[st];
+      const forkStartY = y;
+      const branchStartY = currY;
 
-    svgHtml += `<line x1="32" y1="${jY - rowHeight}" x2="32" y2="${jY}" stroke="${baseColor}" stroke-width="4.5" opacity="0.45" />`;
-    svgHtml += `<circle cx="32" cy="${jY}" r="8.5" fill="#ffffff" stroke="#000000" stroke-width="4" />`;
-    svgHtml += `<circle cx="32" cy="${jY}" r="4" fill="${style.fill}" stroke="${style.stroke}" stroke-width="2" />`;
-    svgHtml += `<text x="50" y="${jY + 4}" fill="var(--text-color)" font-size="13" font-weight="800">${escapeHtml(j.name)} (Junction)</text>`;
+      const xOffsets = [290, 540];
+      let maxBranchLen = 0;
 
-    const forkStartY = jY;
-    const branchStartY = jY + 28;
+      branches.forEach((branchStations, bIdx) => {
+        const targetX = xOffsets[bIdx] || (290 + bIdx * 250);
+        if (branchStations.length > maxBranchLen) maxBranchLen = branchStations.length;
 
-    const xOffsets = [32, 290, 540];
-    let maxBranchLen = 0;
+        svgHtml += `<path d="M 32 ${forkStartY} C 32 ${forkStartY + 18}, ${targetX} ${forkStartY + 10}, ${targetX} ${branchStartY}" stroke="${baseColor}" stroke-width="3.5" fill="none" opacity="0.5" />`;
 
-    j.splits.forEach((branchStations, bIdx) => {
-      const targetX = xOffsets[bIdx] || (32 + bIdx * 250);
-      if (branchStations.length > maxBranchLen) maxBranchLen = branchStations.length;
-
-      svgHtml += `<path d="M 32 ${forkStartY} C 32 ${forkStartY + 18}, ${targetX} ${forkStartY + 10}, ${targetX} ${branchStartY}" stroke="${baseColor}" stroke-width="3.5" fill="none" opacity="0.5" />`;
-
-      if (branchStations.length > 1) {
-        svgHtml += `<line x1="${targetX}" y1="${branchStartY}" x2="${targetX}" y2="${branchStartY + (branchStations.length - 1) * rowHeight}" stroke="${baseColor}" stroke-width="3.5" opacity="0.45" />`;
-      }
-
-      let bY = branchStartY;
-      branchStations.forEach((st) => {
-        const bStatus = stationStatuses.get(st);
-        const bStyle = getStatusStyle(bStatus);
-        const bIcBadges = getInterchangeBadgesHtml(lineId, st);
-
-        if (bIcBadges) {
-          svgHtml += `<circle cx="${targetX}" cy="${bY}" r="7.5" fill="#ffffff" stroke="#000000" stroke-width="2.5" />`;
-          svgHtml += `<circle cx="${targetX}" cy="${bY}" r="3.5" fill="${bStyle.fill}" stroke="${bStyle.stroke}" stroke-width="1.5" />`;
-        } else {
-          svgHtml += `<circle cx="${targetX}" cy="${bY}" r="5.5" fill="${bStyle.fill}" stroke="${bStyle.stroke}" stroke-width="2.5" />`;
+        if (branchStations.length > 1) {
+          svgHtml += `<line x1="${targetX}" y1="${branchStartY}" x2="${targetX}" y2="${branchStartY + (branchStations.length - 1) * rowHeight}" stroke="${baseColor}" stroke-width="3.5" opacity="0.45" />`;
         }
 
-        svgHtml += `<text x="${targetX + 14}" y="${bY + 4}" fill="${bStyle.text}" font-size="12" font-weight="${bStatus || bIcBadges ? '700' : '600'}">${escapeHtml(st)}${bStyle.symbol}</text>`;
-        
-        if (bIcBadges) {
-          const nextTrackX = xOffsets[bIdx + 1] || 760;
-          const availableBadgeWidth = Math.max(nextTrackX - (targetX + 160), 100);
+        let bY = branchStartY;
+        branchStations.forEach((bSt) => {
+          nodeYMap.set(bSt, bY);
+          const bStatus = stationStatuses.get(bSt);
+          const bStyle = getStatusStyle(bStatus);
+          const bIcBadges = getInterchangeBadgesHtml(lineId, bSt);
 
-          svgHtml += `<foreignObject x="${targetX + 155}" y="${bY - 11}" width="${availableBadgeWidth}" height="22">${bIcBadges}</foreignObject>`;
+          if (bIcBadges) {
+            svgHtml += `<circle cx="${targetX}" cy="${bY}" r="7.5" fill="#ffffff" stroke="#000000" stroke-width="2.5" />`;
+            svgHtml += `<circle cx="${targetX}" cy="${bY}" r="3.5" fill="${bStyle.fill}" stroke="${bStyle.stroke}" stroke-width="1.5" />`;
+          } else {
+            svgHtml += `<circle cx="${targetX}" cy="${bY}" r="5.5" fill="${bStyle.fill}" stroke="${bStyle.stroke}" stroke-width="2.5" />`;
+          }
+
+          svgHtml += `<text x="${targetX + 14}" y="${bY + 4}" fill="${bStyle.text}" font-size="12" font-weight="${bStatus || bIcBadges ? '700' : '600'}">${escapeHtml(bSt)}${bStyle.symbol}</text>`;
+          
+          if (bIcBadges) {
+            const nextTrackX = xOffsets[bIdx + 1] || 760;
+            const availableBadgeWidth = Math.max(nextTrackX - (targetX + 160), 100);
+            svgHtml += `<foreignObject x="${targetX + 155}" y="${bY - 11}" width="${availableBadgeWidth}" height="22">${bIcBadges}</foreignObject>`;
+          }
+          bY += rowHeight;
+        });
+
+        // REJOIN LOOP LOGIC FOR CENTRAL LINE HAINAULT BRANCH TO WOODFORD
+        const lastStationInBranch = branchStations[branchStations.length - 1];
+        if (lastStationInBranch === "Woodford" && nodeYMap.has("Woodford")) {
+          const woodfordY = nodeYMap.get("Woodford");
+          const endBranchY = branchStartY + (branchStations.length - 1) * rowHeight;
+          svgHtml += `<path d="M ${targetX} ${endBranchY} C ${targetX} ${endBranchY + 20}, 32 ${woodfordY - 10}, 32 ${woodfordY}" stroke="${baseColor}" stroke-width="3.5" fill="none" stroke-dasharray="4 4" opacity="0.75" />`;
         }
-        bY += rowHeight;
       });
-    });
 
-    currY = branchStartY + (maxBranchLen * rowHeight) + 20;
+      currY += (maxBranchLen * rowHeight) + 10;
+    }
   });
 
   svgHtml += `</svg>`;
@@ -848,10 +843,11 @@ function renderHorizontalWorksMap(lineId, descriptionText) {
   if (LINE_TREES[lineId]) {
     const tree = LINE_TREES[lineId];
     stationList = [...tree.trunk];
-    tree.junctions.forEach(j => {
-      stationList.push(j.name);
-      j.splits.forEach(b => stationList.push(...b));
-    });
+    if (tree.branchesFromNode) {
+      Object.values(tree.branchesFromNode).forEach(branches => {
+        branches.forEach(b => stationList.push(...b));
+      });
+    }
   } else {
     stationList = LINE_ROUTES[lineId] || [];
   }
