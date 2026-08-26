@@ -288,7 +288,7 @@
     <div class="zoom-svg-container" id="zoom-svg-target"></div>
   </div>
 </div>
-<script>
+  <script>
 function escapeHtml(value) {
   const div = document.createElement("div");
   div.textContent = value || "";
@@ -502,27 +502,17 @@ const INTERCHANGE_DIRECTORY = {
   "Hatton Cross": ["piccadilly"],
   "Heathrow Terminals 2 & 3": ["piccadilly", "elizabeth"],
   "Heathrow Terminal 4": ["piccadilly", "elizabeth"],
-  "Heathrow Terminal 5": ["piccadilly", "elizabeth"]
+  "Heathrow Terminal 5": ["piccadilly", "elizabeth"],
+  "Highbury & Islington": ["victoria", "windrush", "national-rail"],
+  "Canada Water": ["jubilee", "windrush"],
+  "Surrey Quays": ["windrush"],
+  "New Cross Gate": ["windrush", "national-rail"],
+  "West Croydon": ["windrush", "tram", "national-rail"],
+  "Crystal Palace": ["windrush", "national-rail"]
 };
 
-// DIRECT GRAPH ROUTING (NO DUPLICATE JUNCTION NODES & SUPPORT FOR HAINAULT/CIRCLE LOOPS)
+// FULL TREE TOPOLOGIES (COMPACT BRANCH SPACING & WINDRUSH OVERGROUND MAP)
 const LINE_TREES = {
-  "circle": {
-    extension: [
-      "Hammersmith", "Goldhawk Road", "Shepherd's Bush Market", "Wood Lane", 
-      "Latimer Road", "Ladbroke Grove", "Westbourne Park", "Royal Oak", "Paddington"
-    ],
-    ringTop: [
-      "Edgware Road", "Baker Street", "Great Portland Street", "Euston Square", 
-      "King's Cross St Pancras", "Farringdon", "Barbican", "Moorgate", "Liverpool Street", "Aldgate"
-    ],
-    ringBottom: [
-      "Tower Hill", "Monument", "Cannon Street", "Mansion House", "Blackfriars", 
-      "Temple", "Embankment", "Westminster", "St James's Park", "Victoria", 
-      "Sloane Square", "South Kensington", "Gloucester Road", "High Street Kensington", 
-      "Notting Hill Gate", "Bayswater", "Paddington"
-    ]
-  },
   "district": {
     trunk: [
       "Upminster", "Upminster Bridge", "Hornchurch", "Elm Park", "Dagenham East", "Dagenham Heathway", 
@@ -543,6 +533,10 @@ const LINE_TREES = {
         ["Gunnersbury", "Kew Gardens", "Richmond"],
         ["Chiswick Park", "Acton Town", "Ealing Common", "Ealing Broadway"]
       ]
+    },
+    continuationFromBranchNode: {
+      "Earl's Court": "West Kensington",
+      "Turnham Green": "Chiswick Park"
     }
   },
   "central": {
@@ -558,6 +552,9 @@ const LINE_TREES = {
       "Leytonstone": [
         ["Wanstead", "Redbridge", "Gants Hill", "Newbury Park", "Barkingside", "Fairlop", "Hainault", "Grange Hill", "Chigwell", "Roding Valley", "Woodford"]
       ]
+    },
+    continuationFromBranchNode: {
+      "Leytonstone": "Snaresbrook"
     }
   },
   "piccadilly": {
@@ -572,6 +569,21 @@ const LINE_TREES = {
       "Acton Town": [
         ["Ealing Common", "North Ealing", "Park Royal", "Alperton", "Sudbury Town", "Sudbury Hill", "South Harrow", "Rayners Lane", "Eastcote", "Ruislip Manor", "Ruislip", "Ickenham", "Hillingdon", "Uxbridge"],
         ["South Ealing", "Northfields", "Boston Manor", "Osterley", "Hounslow East", "Hounslow Central", "Hounslow West", "Hatton Cross", "Heathrow Terminal 4", "Heathrow Terminals 2 & 3", "Heathrow Terminal 5"]
+      ]
+    }
+  },
+  "windrush": {
+    trunk: [
+      "Highbury & Islington", "Canonbury", "Dalston Junction", "Haggerston", "Hoxton", 
+      "Shoreditch High Street", "Whitechapel", "Shadwell", "Wapping", "Rotherhithe", 
+      "Canada Water", "Surrey Quays"
+    ],
+    branchesFromNode: {
+      "Surrey Quays": [
+        ["New Cross"],
+        ["New Cross Gate", "Brockley", "Honor Oak Park", "Forest Hill", "Sydenham", "Crystal Palace"],
+        ["Penge West", "Anerley", "Norwood Junction", "West Croydon"],
+        ["Queens Road Peckham", "Peckham Rye", "Denmark Hill", "Clapham High Street", "Wandsworth Road", "Clapham Junction"]
       ]
     }
   },
@@ -592,6 +604,7 @@ const LINE_TREES = {
 
 const LINE_ROUTES = {
   "bakerloo": ["Harrow & Wealdstone", "Kenton", "South Kenton", "North Wembley", "Wembley Central", "Stonebridge Park", "Harlesden", "Willesden Junction", "Kensal Green", "Queen's Park", "Kilburn Park", "Maida Vale", "Warwick Avenue", "Paddington", "Edgware Road", "Marylebone", "Baker Street", "Regent's Park", "Oxford Circus", "Piccadilly Circus", "Charing Cross", "Embankment", "Waterloo", "Lambeth North", "Elephant & Castle"],
+  "circle": ["Hammersmith", "Goldhawk Road", "Shepherd's Bush Market", "Wood Lane", "Latimer Road", "Ladbroke Grove", "Westbourne Park", "Royal Oak", "Paddington", "Edgware Road", "Baker Street", "Great Portland Street", "Euston Square", "King's Cross St Pancras", "Farringdon", "Barbican", "Moorgate", "Liverpool Street", "Aldgate", "Tower Hill", "Monument", "Cannon Street", "Mansion House", "Blackfriars", "Temple", "Embankment", "Westminster", "St James's Park", "Victoria", "Sloane Square", "South Kensington", "Gloucester Road", "High Street Kensington", "Notting Hill Gate", "Bayswater"],
   "hammersmith-city": ["Hammersmith", "Goldhawk Road", "Shepherd's Bush Market", "Wood Lane", "Latimer Road", "Ladbroke Grove", "Westbourne Park", "Royal Oak", "Paddington", "Edgware Road", "Baker Street", "Great Portland Street", "Euston Square", "King's Cross St Pancras", "Farringdon", "Barbican", "Moorgate", "Liverpool Street", "Aldgate East", "Whitechapel", "Stepney Green", "Mile End", "Bow Road", "Bromley-by-Bow", "West Ham", "Plaistow", "Upton Park", "East Ham", "Barking"],
   "jubilee": ["Stanmore", "Canons Park", "Queensbury", "Kingsbury", "Wembley Park", "Neasden", "Dollis Hill", "Willesden Green", "Kilburn", "West Hampstead", "Finchley Road", "Swiss Cottage", "St John's Wood", "Baker Street", "Bond Street", "Green Park", "Westminster", "Waterloo", "Southwark", "London Bridge", "Bermondsey", "Canada Water", "Canary Wharf", "North Greenwich", "Canning Town", "Stratford"],
   "metropolitan": ["Aldgate", "Liverpool Street", "Moorgate", "Barbican", "Farringdon", "King's Cross St Pancras", "Euston Square", "Great Portland Street", "Baker Street", "Finchley Road", "Wembley Park", "Preston Road", "Harrow-on-the-Hill", "North Harrow", "Pinner", "Northwood Hills", "Northwood", "Moor Park", "Rickmansworth", "Chorleywood", "Chalfont & Latimer", "Amersham", "Chesham", "Watford", "West Harrow", "Rayners Lane", "Eastcote", "Ruislip Manor", "Ruislip", "Ickenham", "Hillingdon", "Uxbridge"],
@@ -617,9 +630,6 @@ function evaluateStationStatuses(lineId, lineStatuses) {
   if (LINE_TREES[lineId]) {
     const tree = LINE_TREES[lineId];
     if (tree.trunk) allStations = [...tree.trunk];
-    if (tree.extension) allStations.push(...tree.extension);
-    if (tree.ringTop) allStations.push(...tree.ringTop);
-    if (tree.ringBottom) allStations.push(...tree.ringBottom);
     if (tree.branchesFromNode) {
       Object.values(tree.branchesFromNode).forEach(branches => {
         branches.forEach(b => allStations.push(...b));
@@ -702,7 +712,7 @@ function getInterchangeBadgesHtml(currentLineId, stationName) {
   return `<div class="ic-badge-container">${badges}</div>`;
 }
 
-// CONTINUOUS FLOW DIRECTED SVG GRAPH RENDERER WITH DYNAMIC VIEWBOX WIDTH AND CIRCLE LINE LOOP
+// COMPACT DIRECTED GRAPH RENDERER WITH DASHED CONTINUATION CONNECTORS
 function renderSVGTreeDiagram(lineId, stationStatuses) {
   const lineConf = LINE_COLORS[lineId] || { hex: "#EE7C0E" };
   const baseColor = lineConf.hex;
@@ -713,50 +723,6 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
     if (status === "minor") return { fill: "var(--status-minor)", stroke: "var(--status-minor)", symbol: " ⚠️", text: "var(--status-minor)" };
     if (status === "planned") return { fill: "var(--status-planned)", stroke: "var(--status-planned)", symbol: " 🚧", text: "var(--status-planned)" };
     return { fill: "#ffffff", stroke: baseColor, symbol: "", text: "var(--text-color)" };
-  }
-
-  // RENDER CIRCLE LINE SPIRAL LOOP (MATCHING LONDONTUBEMAP.ORG)
-  if (lineId === "circle") {
-    const cTree = LINE_TREES["circle"];
-    const svgWidth = 820;
-    const svgHeight = 420;
-    
-    let svg = `<svg width="100%" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" preserveAspectRatio="xMinYMin meet">`;
-    
-    // Outer Ring Track Path
-    svg += `<rect x="220" y="40" width="560" height="300" rx="16" fill="none" stroke="${baseColor}" stroke-width="8" opacity="0.85" />`;
-    
-    // Suburban Extension Track (Hammersmith to Paddington/Edgware Road junction)
-    svg += `<line x1="30" y1="190" x2="220" y2="190" stroke="${baseColor}" stroke-width="8" opacity="0.85" />`;
-
-    // Draw Extension Stations (Horizontal layout on left)
-    cTree.extension.forEach((st, i) => {
-      const x = 30 + (i * 20);
-      const status = stationStatuses.get(st);
-      const style = getStatusStyle(status);
-      svg += `<circle cx="${x}" cy="190" r="5" fill="${style.fill}" stroke="${style.stroke}" stroke-width="2" />`;
-    });
-
-    // Top Loop Stations (Edgware Road to Aldgate)
-    cTree.ringTop.forEach((st, i) => {
-      const x = 240 + (i * 55);
-      const status = stationStatuses.get(st);
-      const style = getStatusStyle(status);
-      svg += `<circle cx="${x}" cy="40" r="6" fill="${style.fill}" stroke="${style.stroke}" stroke-width="2.5" />`;
-      svg += `<text x="${x}" y="25" fill="${style.text}" font-size="10" font-weight="700" transform="rotate(-45 ${x} 25)" text-anchor="start">${escapeHtml(st)}</text>`;
-    });
-
-    // Bottom Loop Stations (Tower Hill to Paddington)
-    cTree.ringBottom.forEach((st, i) => {
-      const x = 760 - (i * 32);
-      const status = stationStatuses.get(st);
-      const style = getStatusStyle(status);
-      svg += `<circle cx="${x}" cy="340" r="6" fill="${style.fill}" stroke="${style.stroke}" stroke-width="2.5" />`;
-      svg += `<text x="${x}" y="360" fill="${style.text}" font-size="10" font-weight="700" transform="rotate(45 ${x} 360)" text-anchor="start">${escapeHtml(st)}</text>`;
-    });
-
-    svg += `</svg>`;
-    return `<div class="svg-tree-wrapper">${svg}</div>`;
   }
 
   if (!LINE_TREES[lineId]) {
@@ -807,8 +773,9 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
     });
   }
 
-  // DYNAMIC VIEWBOX WIDTH FIX: Expands canvas horizontally to prevent right-side branch cutoffs
-  const svgWidth = Math.max(780, 100 + (maxBranches * 270));
+  // COMPACT CANVAS SPACING (170px per branch offset)
+  const branchSpacing = 170;
+  const svgWidth = Math.max(780, 160 + (maxBranches * branchSpacing));
   const svgHeight = (totalRows * rowHeight) + 120;
   let currY = 14;
   let nodeYMap = new Map();
@@ -837,7 +804,7 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
 
     svgHtml += `<text x="50" y="${y + 4}" fill="${style.text}" font-size="13" font-weight="${status || isInterchange ? '700' : '600'}">${escapeHtml(st)}${style.symbol}</text>`;
     if (icBadges) {
-      svgHtml += `<foreignObject x="280" y="${y - 11}" width="480" height="22">${icBadges}</foreignObject>`;
+      svgHtml += `<foreignObject x="220" y="${y - 11}" width="380" height="22">${icBadges}</foreignObject>`;
     }
     
     currY += rowHeight;
@@ -847,11 +814,10 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
       const forkStartY = y;
       const branchStartY = currY;
 
-      const xOffsets = [290, 560, 830];
       let maxBranchLen = 0;
 
       branches.forEach((branchStations, bIdx) => {
-        const targetX = xOffsets[bIdx] || (290 + bIdx * 270);
+        const targetX = 200 + (bIdx * branchSpacing);
         if (branchStations.length > maxBranchLen) maxBranchLen = branchStations.length;
 
         svgHtml += `<path d="M 32 ${forkStartY} C 32 ${forkStartY + 18}, ${targetX} ${forkStartY + 10}, ${targetX} ${branchStartY}" stroke="${baseColor}" stroke-width="3.5" fill="none" opacity="0.5" />`;
@@ -877,14 +843,12 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
           svgHtml += `<text x="${targetX + 14}" y="${bY + 4}" fill="${bStyle.text}" font-size="12" font-weight="${bStatus || bIcBadges ? '700' : '600'}">${escapeHtml(bSt)}${bStyle.symbol}</text>`;
           
           if (bIcBadges) {
-            const nextTrackX = xOffsets[bIdx + 1] || (targetX + 270);
-            const availableBadgeWidth = Math.max(nextTrackX - (targetX + 160), 100);
-            svgHtml += `<foreignObject x="${targetX + 155}" y="${bY - 11}" width="${availableBadgeWidth}" height="22">${bIcBadges}</foreignObject>`;
+            svgHtml += `<foreignObject x="${targetX + 120}" y="${bY - 11}" width="140" height="22">${bIcBadges}</foreignObject>`;
           }
           bY += rowHeight;
         });
 
-        // Loop re-entry line for Central Line Hainault loop returning to Woodford
+        // REJOIN LOOP CONNECTOR (Central Line Hainault loop returning to Woodford)
         const lastStationInBranch = branchStations[branchStations.length - 1];
         if (lastStationInBranch === "Woodford" && nodeYMap.has("Woodford")) {
           const woodfordY = nodeYMap.get("Woodford");
@@ -892,6 +856,15 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
           svgHtml += `<path d="M ${targetX} ${endBranchY} C ${targetX} ${endBranchY + 20}, 32 ${woodfordY - 10}, 32 ${woodfordY}" stroke="${baseColor}" stroke-width="3.5" fill="none" stroke-dasharray="4 4" opacity="0.75" />`;
         }
       });
+
+      // DASHED CONTINUATION CONNECTOR (e.g. Earl's Court -> West Kensington, Leytonstone -> Snaresbrook)
+      if (tree.continuationFromBranchNode && tree.continuationFromBranchNode[st]) {
+        const continuationTarget = tree.continuationFromBranchNode[st];
+        if (nodeYMap.has(continuationTarget)) {
+          const targetY = nodeYMap.get(continuationTarget);
+          svgHtml += `<line x1="32" y1="${forkStartY}" x2="32" y2="${targetY}" stroke="${baseColor}" stroke-width="3.5" stroke-dasharray="4 4" opacity="0.8" />`;
+        }
+      }
 
       currY += (maxBranchLen * rowHeight) + 10;
     }
@@ -909,9 +882,6 @@ function renderHorizontalWorksMap(lineId, descriptionText) {
   if (LINE_TREES[lineId]) {
     const tree = LINE_TREES[lineId];
     if (tree.trunk) stationList = [...tree.trunk];
-    if (tree.extension) stationList.push(...tree.extension);
-    if (tree.ringTop) stationList.push(...tree.ringTop);
-    if (tree.ringBottom) stationList.push(...tree.ringBottom);
     if (tree.branchesFromNode) {
       Object.values(tree.branchesFromNode).forEach(branches => {
         branches.forEach(b => stationList.push(...b));
