@@ -505,8 +505,24 @@ const INTERCHANGE_DIRECTORY = {
   "Heathrow Terminal 5": ["piccadilly", "elizabeth"]
 };
 
-// DIRECT GRAPH ROUTING (NO DUPLICATE JUNCTION NODES & SUPPORT FOR HAINAULT LOOP)
+// DIRECT GRAPH ROUTING (NO DUPLICATE JUNCTION NODES & SUPPORT FOR HAINAULT/CIRCLE LOOPS)
 const LINE_TREES = {
+  "circle": {
+    extension: [
+      "Hammersmith", "Goldhawk Road", "Shepherd's Bush Market", "Wood Lane", 
+      "Latimer Road", "Ladbroke Grove", "Westbourne Park", "Royal Oak", "Paddington"
+    ],
+    ringTop: [
+      "Edgware Road", "Baker Street", "Great Portland Street", "Euston Square", 
+      "King's Cross St Pancras", "Farringdon", "Barbican", "Moorgate", "Liverpool Street", "Aldgate"
+    ],
+    ringBottom: [
+      "Tower Hill", "Monument", "Cannon Street", "Mansion House", "Blackfriars", 
+      "Temple", "Embankment", "Westminster", "St James's Park", "Victoria", 
+      "Sloane Square", "South Kensington", "Gloucester Road", "High Street Kensington", 
+      "Notting Hill Gate", "Bayswater", "Paddington"
+    ]
+  },
   "district": {
     trunk: [
       "Upminster", "Upminster Bridge", "Hornchurch", "Elm Park", "Dagenham East", "Dagenham Heathway", 
@@ -576,7 +592,6 @@ const LINE_TREES = {
 
 const LINE_ROUTES = {
   "bakerloo": ["Harrow & Wealdstone", "Kenton", "South Kenton", "North Wembley", "Wembley Central", "Stonebridge Park", "Harlesden", "Willesden Junction", "Kensal Green", "Queen's Park", "Kilburn Park", "Maida Vale", "Warwick Avenue", "Paddington", "Edgware Road", "Marylebone", "Baker Street", "Regent's Park", "Oxford Circus", "Piccadilly Circus", "Charing Cross", "Embankment", "Waterloo", "Lambeth North", "Elephant & Castle"],
-  "circle": ["Hammersmith", "Goldhawk Road", "Shepherd's Bush Market", "Wood Lane", "Latimer Road", "Ladbroke Grove", "Westbourne Park", "Royal Oak", "Paddington", "Edgware Road", "Baker Street", "Great Portland Street", "Euston Square", "King's Cross St Pancras", "Farringdon", "Barbican", "Moorgate", "Liverpool Street", "Aldgate", "Tower Hill", "Monument", "Cannon Street", "Mansion House", "Blackfriars", "Temple", "Embankment", "Westminster", "St James's Park", "Victoria", "Sloane Square", "South Kensington", "Gloucester Road", "High Street Kensington", "Notting Hill Gate", "Bayswater"],
   "hammersmith-city": ["Hammersmith", "Goldhawk Road", "Shepherd's Bush Market", "Wood Lane", "Latimer Road", "Ladbroke Grove", "Westbourne Park", "Royal Oak", "Paddington", "Edgware Road", "Baker Street", "Great Portland Street", "Euston Square", "King's Cross St Pancras", "Farringdon", "Barbican", "Moorgate", "Liverpool Street", "Aldgate East", "Whitechapel", "Stepney Green", "Mile End", "Bow Road", "Bromley-by-Bow", "West Ham", "Plaistow", "Upton Park", "East Ham", "Barking"],
   "jubilee": ["Stanmore", "Canons Park", "Queensbury", "Kingsbury", "Wembley Park", "Neasden", "Dollis Hill", "Willesden Green", "Kilburn", "West Hampstead", "Finchley Road", "Swiss Cottage", "St John's Wood", "Baker Street", "Bond Street", "Green Park", "Westminster", "Waterloo", "Southwark", "London Bridge", "Bermondsey", "Canada Water", "Canary Wharf", "North Greenwich", "Canning Town", "Stratford"],
   "metropolitan": ["Aldgate", "Liverpool Street", "Moorgate", "Barbican", "Farringdon", "King's Cross St Pancras", "Euston Square", "Great Portland Street", "Baker Street", "Finchley Road", "Wembley Park", "Preston Road", "Harrow-on-the-Hill", "North Harrow", "Pinner", "Northwood Hills", "Northwood", "Moor Park", "Rickmansworth", "Chorleywood", "Chalfont & Latimer", "Amersham", "Chesham", "Watford", "West Harrow", "Rayners Lane", "Eastcote", "Ruislip Manor", "Ruislip", "Ickenham", "Hillingdon", "Uxbridge"],
@@ -601,7 +616,10 @@ function evaluateStationStatuses(lineId, lineStatuses) {
   let allStations = [];
   if (LINE_TREES[lineId]) {
     const tree = LINE_TREES[lineId];
-    allStations = [...tree.trunk];
+    if (tree.trunk) allStations = [...tree.trunk];
+    if (tree.extension) allStations.push(...tree.extension);
+    if (tree.ringTop) allStations.push(...tree.ringTop);
+    if (tree.ringBottom) allStations.push(...tree.ringBottom);
     if (tree.branchesFromNode) {
       Object.values(tree.branchesFromNode).forEach(branches => {
         branches.forEach(b => allStations.push(...b));
@@ -684,7 +702,7 @@ function getInterchangeBadgesHtml(currentLineId, stationName) {
   return `<div class="ic-badge-container">${badges}</div>`;
 }
 
-// CONTINUOUS FLOW DIRECTED SVG GRAPH RENDERER
+// CONTINUOUS FLOW DIRECTED SVG GRAPH RENDERER WITH DYNAMIC VIEWBOX WIDTH AND CIRCLE LINE LOOP
 function renderSVGTreeDiagram(lineId, stationStatuses) {
   const lineConf = LINE_COLORS[lineId] || { hex: "#EE7C0E" };
   const baseColor = lineConf.hex;
@@ -695,6 +713,50 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
     if (status === "minor") return { fill: "var(--status-minor)", stroke: "var(--status-minor)", symbol: " ⚠️", text: "var(--status-minor)" };
     if (status === "planned") return { fill: "var(--status-planned)", stroke: "var(--status-planned)", symbol: " 🚧", text: "var(--status-planned)" };
     return { fill: "#ffffff", stroke: baseColor, symbol: "", text: "var(--text-color)" };
+  }
+
+  // RENDER CIRCLE LINE SPIRAL LOOP (MATCHING LONDONTUBEMAP.ORG)
+  if (lineId === "circle") {
+    const cTree = LINE_TREES["circle"];
+    const svgWidth = 820;
+    const svgHeight = 420;
+    
+    let svg = `<svg width="100%" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" preserveAspectRatio="xMinYMin meet">`;
+    
+    // Outer Ring Track Path
+    svg += `<rect x="220" y="40" width="560" height="300" rx="16" fill="none" stroke="${baseColor}" stroke-width="8" opacity="0.85" />`;
+    
+    // Suburban Extension Track (Hammersmith to Paddington/Edgware Road junction)
+    svg += `<line x1="30" y1="190" x2="220" y2="190" stroke="${baseColor}" stroke-width="8" opacity="0.85" />`;
+
+    // Draw Extension Stations (Horizontal layout on left)
+    cTree.extension.forEach((st, i) => {
+      const x = 30 + (i * 20);
+      const status = stationStatuses.get(st);
+      const style = getStatusStyle(status);
+      svg += `<circle cx="${x}" cy="190" r="5" fill="${style.fill}" stroke="${style.stroke}" stroke-width="2" />`;
+    });
+
+    // Top Loop Stations (Edgware Road to Aldgate)
+    cTree.ringTop.forEach((st, i) => {
+      const x = 240 + (i * 55);
+      const status = stationStatuses.get(st);
+      const style = getStatusStyle(status);
+      svg += `<circle cx="${x}" cy="40" r="6" fill="${style.fill}" stroke="${style.stroke}" stroke-width="2.5" />`;
+      svg += `<text x="${x}" y="25" fill="${style.text}" font-size="10" font-weight="700" transform="rotate(-45 ${x} 25)" text-anchor="start">${escapeHtml(st)}</text>`;
+    });
+
+    // Bottom Loop Stations (Tower Hill to Paddington)
+    cTree.ringBottom.forEach((st, i) => {
+      const x = 760 - (i * 32);
+      const status = stationStatuses.get(st);
+      const style = getStatusStyle(status);
+      svg += `<circle cx="${x}" cy="340" r="6" fill="${style.fill}" stroke="${style.stroke}" stroke-width="2.5" />`;
+      svg += `<text x="${x}" y="360" fill="${style.text}" font-size="10" font-weight="700" transform="rotate(45 ${x} 360)" text-anchor="start">${escapeHtml(st)}</text>`;
+    });
+
+    svg += `</svg>`;
+    return `<div class="svg-tree-wrapper">${svg}</div>`;
   }
 
   if (!LINE_TREES[lineId]) {
@@ -734,20 +796,24 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
   const tree = LINE_TREES[lineId];
   const rowHeight = 30;
   
+  let maxBranches = 1;
   let totalRows = tree.trunk.length;
   if (tree.branchesFromNode) {
     Object.values(tree.branchesFromNode).forEach(branches => {
+      if (branches.length > maxBranches) maxBranches = branches.length;
       let longest = 0;
       branches.forEach(b => { if (b.length > longest) longest = b.length; });
       totalRows += longest + 1;
     });
   }
 
+  // DYNAMIC VIEWBOX WIDTH FIX: Expands canvas horizontally to prevent right-side branch cutoffs
+  const svgWidth = Math.max(780, 100 + (maxBranches * 270));
   const svgHeight = (totalRows * rowHeight) + 120;
   let currY = 14;
   let nodeYMap = new Map();
 
-  let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 780 ${svgHeight}" preserveAspectRatio="xMinYMin meet">`;
+  let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" preserveAspectRatio="xMinYMin meet">`;
 
   tree.trunk.forEach((st, i) => {
     const y = currY;
@@ -781,11 +847,11 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
       const forkStartY = y;
       const branchStartY = currY;
 
-      const xOffsets = [290, 540];
+      const xOffsets = [290, 560, 830];
       let maxBranchLen = 0;
 
       branches.forEach((branchStations, bIdx) => {
-        const targetX = xOffsets[bIdx] || (290 + bIdx * 250);
+        const targetX = xOffsets[bIdx] || (290 + bIdx * 270);
         if (branchStations.length > maxBranchLen) maxBranchLen = branchStations.length;
 
         svgHtml += `<path d="M 32 ${forkStartY} C 32 ${forkStartY + 18}, ${targetX} ${forkStartY + 10}, ${targetX} ${branchStartY}" stroke="${baseColor}" stroke-width="3.5" fill="none" opacity="0.5" />`;
@@ -811,14 +877,14 @@ function renderSVGTreeDiagram(lineId, stationStatuses) {
           svgHtml += `<text x="${targetX + 14}" y="${bY + 4}" fill="${bStyle.text}" font-size="12" font-weight="${bStatus || bIcBadges ? '700' : '600'}">${escapeHtml(bSt)}${bStyle.symbol}</text>`;
           
           if (bIcBadges) {
-            const nextTrackX = xOffsets[bIdx + 1] || 760;
+            const nextTrackX = xOffsets[bIdx + 1] || (targetX + 270);
             const availableBadgeWidth = Math.max(nextTrackX - (targetX + 160), 100);
             svgHtml += `<foreignObject x="${targetX + 155}" y="${bY - 11}" width="${availableBadgeWidth}" height="22">${bIcBadges}</foreignObject>`;
           }
           bY += rowHeight;
         });
 
-        // REJOIN LOOP LOGIC FOR CENTRAL LINE HAINAULT BRANCH TO WOODFORD
+        // Loop re-entry line for Central Line Hainault loop returning to Woodford
         const lastStationInBranch = branchStations[branchStations.length - 1];
         if (lastStationInBranch === "Woodford" && nodeYMap.has("Woodford")) {
           const woodfordY = nodeYMap.get("Woodford");
@@ -842,7 +908,10 @@ function renderHorizontalWorksMap(lineId, descriptionText) {
   let stationList = [];
   if (LINE_TREES[lineId]) {
     const tree = LINE_TREES[lineId];
-    stationList = [...tree.trunk];
+    if (tree.trunk) stationList = [...tree.trunk];
+    if (tree.extension) stationList.push(...tree.extension);
+    if (tree.ringTop) stationList.push(...tree.ringTop);
+    if (tree.ringBottom) stationList.push(...tree.ringBottom);
     if (tree.branchesFromNode) {
       Object.values(tree.branchesFromNode).forEach(branches => {
         branches.forEach(b => stationList.push(...b));
