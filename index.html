@@ -656,10 +656,27 @@ async function fetchLiveArrivalsForStation(stationName, targetId) {
         const unique = [], seen = new Set();
         grouped[lid][plat].sort((a, b) => a.timeToStation - b.timeToStation).forEach(t => { const k = `${t.vehicleId}-${t.destinationName}-${Math.floor(t.timeToStation/30)}`; if(!seen.has(k)){ seen.add(k); unique.push(t); } });
         html += `<div class="dep-platform-group"><div class="dep-platform-title">${escapeHtml(plat)}</div>`;
+        
         unique.slice(0, 4).forEach(t => {
           const dest = (t.destinationName || t.towards || "Check Front of Train").replace(/\s*(Underground|Rail|DLR)\s*Station/gi, '');
           const mins = Math.floor((t.timeToStation || 0) / 60), isDue = (t.timeToStation || 0) < 45;
-          html += `<div class="dep-row"><div><span class="dep-dest">${escapeHtml(dest)}</span>${t.currentLocation ? `<span class="dep-loc">📍 ${escapeHtml(t.currentLocation)}</span>` : ''}</div><span class="dep-time ${isDue ? 'due' : ''}">${isDue ? 'Due' : (mins===1 ? '1 min' : mins+' mins')}</span></div>`;
+          
+          let timeStr = "";
+          if (t.expectedArrival) {
+            const d = new Date(t.expectedArrival);
+            timeStr = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+          }
+
+          html += `<div class="dep-row">
+            <div>
+              <span class="dep-dest">${escapeHtml(dest)}</span>
+              ${t.currentLocation ? `<span class="dep-loc">📍 ${escapeHtml(t.currentLocation)}</span>` : ''}
+            </div>
+            <div style="text-align:right; display:flex; flex-direction:column; align-items:flex-end; gap:3px;">
+              <span class="dep-time ${isDue ? 'due' : ''}">${isDue ? 'Due' : (mins===1 ? '1 min' : mins+' mins')}</span>
+              ${timeStr ? `<span style="font-size:11px; color:var(--text-muted); font-weight:700;">Exp ${escapeHtml(timeStr)}</span>` : ''}
+            </div>
+          </div>`;
         });
         html += `</div>`;
       });
